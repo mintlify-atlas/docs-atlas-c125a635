@@ -1,0 +1,168 @@
+---
+title: 'Scoring Methodology'
+description: 'Deep dive into the RAADS-R scoring algorithm and implementation'
+---
+
+## Overview
+
+The RAADS-R scoring engine implements the validated clinical scoring algorithm for the Ritvo Autism Asperger Diagnostic Scale-Revised. The implementation includes dual scoring engines for cross-validation and comprehensive test coverage.
+
+## Core Scoring Functions
+
+### Item Scoring
+
+Each question item is scored based on the response index (0-3) and whether it's a normative or symptom item.
+
+<CodeGroup>
+```typescript Primary Engine (scoring.ts:11)
+export function scoreItem(responseIndex: number, isNormative: boolean): number {
+  return isNormative ? responseIndex : 3 - responseIndex;
+}
+```
+
+```typescript Alternative Engine (scoring-alt.ts:8)
+const SYMPTOM_SCORES = [3, 2, 1, 0] as const;
+const NORMATIVE_SCORES = [0, 1, 2, 3] as const;
+
+export function scoreItemAlt(responseIndex: number, isNormative: boolean): number {
+  const table = isNormative ? NORMATIVE_SCORES : SYMPTOM_SCORES;
+  return table[responseIndex];
+}
+```
+</CodeGroup>
+
+### Scoring Logic
+
+The scoring algorithm differentiates between two types of items:
+
+<ResponseField name="Symptom Items" type="default">
+  Items where higher response frequency indicates stronger autistic traits.
+  
+  **Formula:** `score = 3 - responseIndex`
+  
+  - "True now and when I was young" (index 0) → 3 points
+  - "True only now" (index 1) → 2 points  
+  - "True only when I was younger than 16" (index 2) → 1 point
+  - "Never true" (index 3) → 0 points
+</ResponseField>
+
+<ResponseField name="Normative Items" type="reversed">
+  Items where lower response frequency indicates stronger autistic traits. Scoring is **reversed**.
+  
+  **Formula:** `score = responseIndex`
+  
+  - "True now and when I was young" (index 0) → 0 points
+  - "True only now" (index 1) → 1 point
+  - "True only when I was younger than 16" (index 2) → 2 points
+  - "Never true" (index 3) → 3 points
+</ResponseField>
+
+<Note>
+  The dataset contains **17 normative items** out of 80 total items. Normative items are distributed across domains: Social (14), Language (1), and Sensory (2). The Interests domain has no normative items.
+</Note>
+
+## Total Score Computation
+
+The `computeResults` function aggregates individual item scores into domain and total scores:
+
+```typescript scoring.ts:18
+export function computeResults(responses: Responses, dataset: Dataset): Results {
+  const itemMap = new Map(dataset.items.map((item) => [item.id, item]));
+
+  const domains: DomainResult[] = dataset.meta.domains.map((domain) => {
+    let score = 0;
+    for (const itemId of domain.itemIds) {
+      const item = itemMap.get(itemId);
+      if (!item) continue;
+      const response = responses[itemId];
+      if (response === undefined) continue;
+      score += scoreItem(response, item.isNormative);
+    }
+    return {
+      key: domain.key,
+      label: domain.label,
+      score,
+      maxScore: domain.maxScore,
+      cutoff: domain.cutoff,
+      aboveCutoff: score > domain.cutoff,
+    };
+  });
+
+  const total = domains.reduce((sum, d) => sum + d.score, 0);
+
+  return {
+    total,
+    totalMax: 240,
+    totalCutoff: dataset.meta.totalCutoff,
+    aboveTotalCutoff: total > dataset.meta.totalCutoff,
+    domains,
+  };
+}
+```
+
+### Algorithm Steps
+
+1. **Map Creation**: Build a lookup map of item ID → item object for O(1) access
+2. **Domain Scoring**: For each domain, iterate through its item IDs:
+   - Retrieve the item and response
+   - Score using `scoreItem(response, item.isNormative)`
+   - Sum all item scores for the domain
+3. **Cutoff Evaluation**: Compare domain score against cutoff using strict `>` operator
+4. **Total Score**: Sum all domain scores (maximum possible: 240)
+5. **Total Cutoff**: Evaluate against total cutoff (65)
+
+## Domain Structure
+
+<Tabs>
+  <Tab title="Social Relatedness">
+    - **Item Count**: 39 items
+    - **Normative Items**: 14
+    - **Max Score**: 117
+    - **Cutoff**: Domain-specific (see dataset)
+  </Tab>
+  <Tab title="Circumscribed Interests">
+    - **Item Count**: 14 items
+    - **Normative Items**: 0
+    - **Max Score**: 42
+    - **Cutoff**: Domain-specific
+  </Tab>
+  <Tab title="Language">
+    - **Item Count**: 7 items
+    - **Normative Items**: 1
+    - **Max Score**: 21
+    - **Cutoff**: Domain-specific
+  </Tab>
+  <Tab title="Sensory Motor">
+    - **Item Count**: 20 items
+    - **Normative Items**: 2
+    - **Max Score**: 60
+    - **Cutoff**: Domain-specific
+  </Tab>
+</Tabs>
+
+## Dual Engine Validation
+
+The codebase implements **two mathematically equivalent scoring engines** to ensure correctness:
+
+- **Primary Engine** (`scoring.ts`): Uses arithmetic formula `3 - responseIndex`
+- **Alternative Engine** (`scoring-alt.ts`): Uses lookup tables `SYMPTOM_SCORES` and `NORMATIVE_SCORES`
+
+Both engines are tested to produce identical results across all possible input combinations. See the [Testing](/technical/testing) page for validation test coverage.
+
+## Cutoff Interpretation
+
+<Warning>
+  The cutoff comparison uses **strict greater-than** (`>`), not greater-than-or-equal-to.
+  
+  - Score of 65 (equal to cutoff): `aboveTotalCutoff = false`
+  - Score of 66 (above cutoff): `aboveTotalCutoff = true`
+</Warning>
+
+This is clinically significant and validated through boundary tests in `src/__tests__/scoring.test.ts:212-238`.
+
+## Implementation Files
+
+- **Primary Engine**: `src/engine/scoring.ts`
+- **Alternative Engine**: `src/engine/scoring-alt.ts`  
+- **Type Definitions**: `src/data/dataset.schema.ts`
+- **Validation Tests**: `src/__tests__/scoring.test.ts`

@@ -1,0 +1,156 @@
+---
+title: Taking the Questionnaire
+description: Learn how to use the RAADS-R questionnaire interface and navigate through questions
+---
+
+The RAADS-R questionnaire consists of 80 questions designed to assess autism spectrum traits across four domains. This guide walks you through the questionnaire interface and its features.
+
+## Starting the Questionnaire
+
+<Steps>
+  <Step title="Read the Introduction">
+    When you first open the application, you'll see the landing page with:
+    - A brief description of the RAADS-R and its four assessment areas
+    - Important disclaimers about the screening nature of the tool
+    - Privacy information about local data storage
+  </Step>
+  
+  <Step title="Click Begin Questionnaire">
+    Click the blue "Begin Questionnaire" button to start. The first time you do this, you may see a privacy banner asking if you want to save your progress locally.
+  </Step>
+  
+  <Step title="Choose Privacy Settings">
+    The privacy banner offers two options:
+    - **Save Progress**: Stores responses in browser localStorage so you can resume later
+    - **No Thanks**: Proceed without saving (you'll need to complete in one session)
+  </Step>
+</Steps>
+
+## Answering Questions
+
+Each question presents a statement about experiences or behaviors with four response options:
+
+<Info>
+  The four response options for every question are:
+  - **True now and when I was young**
+  - **True only now**
+  - **True only when I was younger than 16**
+  - **Never true**
+</Info>
+
+### Question Card Interface
+
+The question card displays:
+- Question number and total count (e.g., "Question 5 of 80")
+- The statement text in large, readable font
+- Four radio button options styled as cards
+- Selected answers are highlighted in blue with a ring border
+
+Example question from `QuestionCard.tsx:29-35`:
+```
+Question 1 of 80
+I am a sympathetic person.
+```
+
+### Navigation Controls
+
+Two buttons appear below each question:
+
+<Accordion title="Back Button">
+  - Returns to the previous question (or landing page if on question 1)
+  - Always enabled
+  - Keyboard shortcut: Left Arrow key
+</Accordion>
+
+<Accordion title="Next Button">
+  - Advances to the next question
+  - Only enabled after selecting an answer
+  - Changes to "View Results" on the final question (when all 80 are answered)
+  - Keyboard shortcut: Right Arrow key (when an answer is selected)
+</Accordion>
+
+## Progress Tracking
+
+A visual progress bar appears at the top of the questionnaire showing:
+- Number of questions answered out of 80 total
+- Visual fill indicating completion percentage
+- Updates in real-time as you answer questions
+
+<Note>
+  You can navigate backward to review or change previous answers at any time. The progress bar tracks total questions answered, not your current position.
+</Note>
+
+## Keyboard Navigation
+
+The questionnaire supports keyboard shortcuts for faster navigation:
+
+| Key | Action |
+|-----|--------|
+| Left Arrow | Go to previous question (or home if on first question) |
+| Right Arrow | Go to next question (only if current question is answered) |
+| Tab | Move between answer options |
+| Space/Enter | Select focused answer option |
+
+Implementation in `Quiz.tsx:33-46`
+
+## Completing the Questionnaire
+
+Once you've answered all 80 questions:
+
+<Steps>
+  <Step title="Answer the Final Question">
+    On question 80, select your response as usual.
+  </Step>
+  
+  <Step title="Click View Results">
+    The "Next" button changes to "View Results" when all questions are complete.
+  </Step>
+  
+  <Step title="Review Your Scores">
+    You'll be taken to the results page showing your total score and subscale breakdowns.
+  </Step>
+</Steps>
+
+<Warning>
+  If you haven't enabled "Save Progress", closing your browser will lose all responses. Consider exporting your results after completion.
+</Warning>
+
+## Resuming a Saved Session
+
+If you enabled progress saving:
+
+- Your responses are automatically saved after each answer
+- Returning to the site will resume where you left off
+- The application loads your saved progress from browser localStorage
+- You'll see previously answered questions already filled in
+
+## Tips for Accurate Results
+
+<Accordion title="Take Your Time">
+  There's no time limit. Consider each statement carefully before responding.
+</Accordion>
+
+<Accordion title="Choose the Most Accurate Response">
+  Select the option that best describes your experiences, even if it's not a perfect fit.
+</Accordion>
+
+<Accordion title="Think About Your Lifetime">
+  Many questions ask about both current and past experiences. Consider your entire life when responding.
+</Accordion>
+
+<Accordion title="Complete in One or Two Sessions">
+  While you can save progress, completing within one or two sessions often provides more consistent responses.
+</Accordion>
+
+## Question Domains
+
+The 80 questions are distributed across four assessment areas:
+
+| Domain | Questions | Description |
+|--------|-----------|-------------|
+| Social Relatedness | 39 questions | Social interactions, empathy, understanding social cues |
+| Circumscribed Interests | 14 questions | Special interests, focus, and routines |
+| Language | 7 questions | Literal interpretation, phrase understanding |
+| Sensory Motor | 20 questions | Sensory sensitivities and motor patterns |
+
+You won't see domain labels during the questionnaire—they're calculated in the results.

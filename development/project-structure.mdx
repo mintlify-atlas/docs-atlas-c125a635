@@ -1,0 +1,264 @@
+---
+title: Project Structure
+description: Understanding the directory structure and file organization of RAADS-R Self-Host
+---
+
+## Directory Overview
+
+The project follows a standard Vite + React structure with clear separation of concerns:
+
+```
+raads-r-self-host/
+├── src/
+│   ├── components/      # React UI components
+│   ├── hooks/           # Custom React hooks
+│   ├── engine/          # Scoring logic
+│   ├── data/            # Questionnaire data and schemas
+│   ├── utils/           # Utility functions
+│   ├── styles/          # Global styles
+│   ├── assets/          # Static assets
+│   ├── __tests__/       # Test files
+│   ├── App.tsx          # Root component
+│   ├── main.tsx         # Application entry point
+│   └── index.css        # Root styles
+├── public/              # Static files served as-is
+├── dist/                # Production build output
+├── package.json         # Dependencies and scripts
+├── vite.config.ts       # Vite configuration
+├── tsconfig.json        # TypeScript configuration
+└── eslint.config.js     # ESLint configuration
+```
+
+## Source Directory Structure
+
+### Components (`src/components/`)
+
+React components organized by feature and responsibility:
+
+```
+components/
+├── Landing.tsx          # Landing page with start button
+├── Quiz.tsx             # Main quiz container
+├── QuestionCard.tsx     # Individual question display
+├── ProgressBar.tsx      # Quiz progress indicator
+├── Results.tsx          # Results screen with scores
+├── PrintView.tsx        # Print-friendly results view
+├── DomainBar.tsx        # Domain score visualization
+├── ExportButtons.tsx    # JSON/CSV/PDF export controls
+├── HowScoringWorks.tsx  # Scoring methodology explanation
+├── DarkModeToggle.tsx   # Dark/light mode switcher
+├── PrivacyBanner.tsx    # localStorage consent banner
+└── DeleteData.tsx       # Data deletion controls
+```
+
+<Note>
+  Each component is self-contained with its own props interface defined inline. No separate types files are needed.
+</Note>
+
+### Hooks (`src/hooks/`)
+
+Custom React hooks for state management and side effects:
+
+```
+hooks/
+├── useQuizState.ts      # Main quiz state machine
+├── useLocalStorage.ts   # localStorage persistence
+└── useDarkMode.ts       # Dark mode state and system preference
+```
+
+**Key Hook: `useQuizState.ts`**
+
+This is the central state management hook that handles:
+- Quiz navigation (landing → quiz → results → print)
+- Response tracking
+- Score calculation
+- LocalStorage integration
+- Consent management
+
+### Engine (`src/engine/`)
+
+Scoring algorithms and calculation logic:
+
+```
+engine/
+├── scoring.ts           # Primary scoring algorithm
+└── scoring-alt.ts       # Alternative scoring (lookup table)
+```
+
+<Tip>
+  Both scoring engines are cross-validated in tests to ensure accuracy. They use different approaches but must produce identical results.
+</Tip>
+
+**Scoring Logic:**
+- Normal items: score = response value (0-3)
+- Normative items: score = 3 - response value (reverse scoring)
+- Domain scores: sum of relevant item scores
+- Total score: sum of all domain scores (max 240)
+
+### Data (`src/data/`)
+
+Questionnaire data and TypeScript schemas:
+
+```
+data/
+├── dataset.json         # All 80 RAADS-R questions
+└── dataset.schema.ts    # TypeScript types for dataset
+```
+
+**Dataset Structure:**
+
+```typescript
+interface Dataset {
+  meta: {
+    totalItems: number;
+    responseOptions: string[];
+    domains: Domain[];
+    totalCutoff: number;
+  };
+  items: Item[];
+}
+
+interface Item {
+  id: number;
+  text: string;
+  isNormative: boolean;  // true = reverse scoring
+  domain: string;        // "social" | "circumscribed" | "language" | "sensory"
+}
+```
+
+### Utils (`src/utils/`)
+
+Utility functions for data manipulation:
+
+```
+utils/
+└── export.ts            # JSON/CSV export helpers
+```
+
+### Tests (`src/__tests__/`)
+
+Test suites using Vitest:
+
+```
+__tests__/
+├── scoring.test.ts      # Scoring algorithm validation
+└── dataset.test.ts      # Dataset integrity checks
+```
+
+**Test Coverage:**
+- 62+ tests total
+- Golden test vectors for uniform responses
+- Cross-validation between scoring engines
+- Dataset structural integrity (no duplicates, all 80 items accounted for)
+
+## Configuration Files
+
+### `vite.config.ts`
+
+Vite configuration with React and Tailwind plugins:
+
+```typescript
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  test: {
+    globals: true,
+  },
+})
+```
+
+### `package.json`
+
+Key dependencies:
+
+```json
+{
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "playwright": "^1.58.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.1",
+    "tailwindcss": "^4.2.1",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18"
+  }
+}
+```
+
+### TypeScript Configuration
+
+- **`tsconfig.json`** - Root TypeScript config
+- **`tsconfig.app.json`** - App-specific settings
+- **`tsconfig.node.json`** - Node environment settings (for Vite config)
+
+## Application Flow
+
+<Steps>
+  <Step title="Entry Point">
+    `src/main.tsx` renders `<App />` into the DOM
+  </Step>
+
+  <Step title="Root Component">
+    `src/App.tsx` initializes state with `useQuizState` and renders the appropriate screen
+  </Step>
+
+  <Step title="Screen Routing">
+    State machine handles transitions:
+    - `landing` → `quiz` → `results` → `print`
+    - User can navigate back or retake the quiz
+  </Step>
+
+  <Step title="Data Persistence">
+    `useLocalStorage` syncs state with localStorage (opt-in only)
+  </Step>
+
+  <Step title="Score Calculation">
+    On quiz completion, `scoring.ts` calculates domain and total scores
+  </Step>
+</Steps>
+
+## Build Output
+
+Running `npm run build` produces:
+
+```
+dist/
+├── index.html           # Entry HTML file
+├── assets/
+│   ├── index-[hash].js  # Bundled JavaScript
+│   └── index-[hash].css # Bundled CSS
+└── vite.svg             # Favicon
+```
+
+<Warning>
+  The `dist/` directory is git-ignored and should never be committed to version control.
+</Warning>
+
+## Key Architectural Decisions
+
+### No Backend
+All logic runs client-side. No API calls, no server, no database.
+
+### TypeScript Strict Mode
+Full type safety with strict TypeScript configuration.
+
+### Tailwind v4
+Utility-first CSS with CSS variables for theming (dark mode).
+
+### LocalStorage Only
+Optional persistence with clear consent UI. No cookies, no tracking.
+
+### Dual Scoring Engines
+Two independent implementations cross-validated in tests for accuracy.
+
+## Next Steps
+
+- Learn how to [Customize](/development/customization) the questionnaire or UI
+- Review the [Contributing Guidelines](/development/contributing)
+- Set up your [Local Development Environment](/development/setup)

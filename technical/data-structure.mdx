@@ -1,0 +1,286 @@
+---
+title: 'Data Structure'
+description: 'TypeScript interfaces and data models for RAADS-R implementation'
+---
+
+## Overview
+
+The RAADS-R application uses strongly-typed TypeScript interfaces defined in `src/data/dataset.schema.ts`. These types ensure type safety across the scoring engine, UI components, and state management.
+
+## Core Data Types
+
+### Item
+
+Represents a single question in the assessment.
+
+```typescript dataset.schema.ts:9
+export interface Item {
+  id: number;
+  text: string;
+  isNormative: boolean;
+  domain: string;
+}
+```
+
+<ParamField path="id" type="number" required>
+  Unique identifier (1-80). Item IDs are sequential with no gaps.
+</ParamField>
+
+<ParamField path="text" type="string" required>
+  The question text displayed to the user.
+</ParamField>
+
+<ParamField path="isNormative" type="boolean" required>
+  Determines scoring direction:
+  - `true`: Normative item (reversed scoring)
+  - `false`: Symptom item (standard scoring)
+</ParamField>
+
+<ParamField path="domain" type="string" required>
+  Domain key this item belongs to: `"social"`, `"interests"`, `"language"`, or `"sensory"`
+</ParamField>
+
+### Domain
+
+Defines a scoring domain with its items and thresholds.
+
+```typescript dataset.schema.ts:1
+export interface Domain {
+  key: string;
+  label: string;
+  itemIds: number[];
+  maxScore: number;
+  cutoff: number;
+}
+```
+
+<ParamField path="key" type="string" required>
+  Domain identifier: `social`, `interests`, `language`, `sensory`
+</ParamField>
+
+<ParamField path="label" type="string" required>
+  Human-readable domain name for display.
+</ParamField>
+
+<ParamField path="itemIds" type="number[]" required>
+  Array of item IDs belonging to this domain. No item appears in multiple domains.
+</ParamField>
+
+<ParamField path="maxScore" type="number" required>
+  Maximum possible score for this domain (number of items × 3).
+</ParamField>
+
+<ParamField path="cutoff" type="number" required>
+  Clinical threshold for this domain. Scores **strictly greater** than this value indicate above-cutoff.
+</ParamField>
+
+### DatasetMeta
+
+Container for assessment metadata and configuration.
+
+```typescript dataset.schema.ts:16
+export interface DatasetMeta {
+  totalItems: number;
+  responseOptions: string[];
+  domains: Domain[];
+  totalCutoff: number;
+}
+```
+
+<ParamField path="totalItems" type="number" required>
+  Total number of items in the assessment (80).
+</ParamField>
+
+<ParamField path="responseOptions" type="string[]" required>
+  Array of exactly 4 response option labels:
+  1. "True now and when I was young"
+  2. "True only now"
+  3. "True only when I was younger than 16"
+  4. "Never true"
+</ParamField>
+
+<ParamField path="domains" type="Domain[]" required>
+  Array of all domain configurations.
+</ParamField>
+
+<ParamField path="totalCutoff" type="number" required>
+  Overall clinical threshold (65). Total scores > 65 indicate above-cutoff.
+</ParamField>
+
+### Dataset
+
+Root data structure containing all assessment data.
+
+```typescript dataset.schema.ts:23
+export interface Dataset {
+  meta: DatasetMeta;
+  items: Item[];
+}
+```
+
+## Response Types
+
+### Response
+
+A single user response to a question.
+
+```typescript dataset.schema.ts:28
+export type Response = 0 | 1 | 2 | 3;
+```
+
+<Note>
+  Response values are literal types (0-3) corresponding to the four response options. This provides compile-time safety against invalid response values.
+</Note>
+
+### Responses
+
+Collection of all user responses, keyed by item ID.
+
+```typescript dataset.schema.ts:29
+export type Responses = Record<number, Response>;
+```
+
+**Example:**
+```typescript
+const responses: Responses = {
+  1: 2,  // Item 1: "True only when I was younger than 16"
+  2: 0,  // Item 2: "True now and when I was young"
+  3: 3,  // Item 3: "Never true"
+  // ...
+};
+```
+
+## Results Types
+
+### DomainResult
+
+Scoring results for a single domain.
+
+```typescript dataset.schema.ts:31
+export interface DomainResult {
+  key: string;
+  label: string;
+  score: number;
+  maxScore: number;
+  cutoff: number;
+  aboveCutoff: boolean;
+}
+```
+
+<ResponseField name="key" type="string">
+  Domain identifier (matches `Domain.key`)
+</ResponseField>
+
+<ResponseField name="label" type="string">
+  Human-readable domain name
+</ResponseField>
+
+<ResponseField name="score" type="number">
+  Computed score for this domain (sum of all item scores)
+</ResponseField>
+
+<ResponseField name="maxScore" type="number">
+  Maximum possible score (copied from domain definition)
+</ResponseField>
+
+<ResponseField name="cutoff" type="number">
+  Clinical threshold (copied from domain definition)
+</ResponseField>
+
+<ResponseField name="aboveCutoff" type="boolean">
+  `true` if `score > cutoff` (strict comparison)
+</ResponseField>
+
+### Results
+
+Complete scoring results including total and per-domain scores.
+
+```typescript dataset.schema.ts:40
+export interface Results {
+  total: number;
+  totalMax: number;
+  totalCutoff: number;
+  aboveTotalCutoff: boolean;
+  domains: DomainResult[];
+}
+```
+
+<ResponseField name="total" type="number">
+  Sum of all domain scores (0-240)
+</ResponseField>
+
+<ResponseField name="totalMax" type="number">
+  Maximum possible total score (always 240)
+</ResponseField>
+
+<ResponseField name="totalCutoff" type="number">
+  Overall clinical threshold (65)
+</ResponseField>
+
+<ResponseField name="aboveTotalCutoff" type="boolean">
+  `true` if `total > totalCutoff`
+</ResponseField>
+
+<ResponseField name="domains" type="DomainResult[]">
+  Array of per-domain scoring results
+</ResponseField>
+
+## Data Validation
+
+The dataset structure is validated through comprehensive tests in `src/__tests__/dataset.test.ts`:
+
+<Tabs>
+  <Tab title="Structural Validation">
+    - Exactly 80 items with IDs 1-80 (no gaps)
+    - All required fields present and correctly typed
+    - 4 response options in correct order
+    - Domain item counts: Social (39), Interests (14), Language (7), Sensory (20)
+  </Tab>
+  <Tab title="Domain Integrity">
+    - No item belongs to multiple domains
+    - All `domain.itemIds` reference valid item IDs
+    - Each item's `domain` field matches its containing domain
+    - Domain max scores: Social (117), Interests (42), Language (21), Sensory (60)
+  </Tab>
+  <Tab title="Normative Items">
+    - Exactly 17 normative items
+    - Known normative item IDs: [1, 6, 11, 18, 23, 26, 33, 37, 43, 47, 48, 53, 58, 62, 68, 72, 77]
+    - Distribution: Social (14), Interests (0), Language (1), Sensory (2)
+  </Tab>
+  <Tab title="Score Constraints">
+    - Total max score = 240 (sum of domain max scores)
+    - Total cutoff = 65
+    - All cutoff values are integers
+  </Tab>
+</Tabs>
+
+## Type Safety Examples
+
+```typescript
+import type { Dataset, Responses, Response } from './data/dataset.schema';
+import dataset from './data/dataset.json';
+
+const typedDataset = dataset as Dataset;
+
+// ✅ Type-safe response creation
+const responses: Responses = {};
+responses[1] = 2;  // Valid
+// responses[1] = 4;  // ❌ Type error: 4 is not assignable to type Response
+
+// ✅ Type-safe domain access
+const socialDomain = typedDataset.meta.domains.find(d => d.key === 'social');
+if (socialDomain) {
+  console.log(`Social domain has ${socialDomain.itemIds.length} items`);
+}
+
+// ✅ Type-safe iteration
+for (const item of typedDataset.items) {
+  console.log(`${item.id}: ${item.text} [${item.domain}]`);
+}
+```
+
+## Implementation Files
+
+- **Schema Definition**: `src/data/dataset.schema.ts`
+- **Dataset JSON**: `src/data/dataset.json`
+- **Validation Tests**: `src/__tests__/dataset.test.ts`

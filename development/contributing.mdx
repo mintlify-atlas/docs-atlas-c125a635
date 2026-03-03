@@ -1,0 +1,327 @@
+---
+title: Contributing Guidelines
+description: How to contribute to the RAADS-R Self-Host project
+---
+
+## Welcome Contributors
+
+Thank you for considering contributing to RAADS-R Self-Host! This project aims to provide an accurate, accessible, and privacy-focused implementation of the RAADS-R screening questionnaire.
+
+<Note>
+  This is a clinical tool. All contributions should prioritize accuracy, accessibility, and user privacy.
+</Note>
+
+## Code of Conduct
+
+By participating in this project, you agree to:
+
+- Be respectful and inclusive
+- Focus on what's best for the community
+- Show empathy towards other contributors
+- Accept constructive criticism gracefully
+- Prioritize clinical accuracy and user privacy
+
+## How to Contribute
+
+### Reporting Bugs
+
+Before submitting a bug report:
+
+<Steps>
+  <Step title="Search Existing Issues">
+    Check if the issue has already been reported in the GitHub issue tracker.
+  </Step>
+
+  <Step title="Reproduce the Bug">
+    Ensure you can consistently reproduce the issue:
+    - What steps trigger the bug?
+    - What did you expect to happen?
+    - What actually happened?
+    - What browser/OS are you using?
+  </Step>
+
+  <Step title="Create a Detailed Report">
+    Open a new issue with:
+    - Clear title describing the problem
+    - Step-by-step reproduction instructions
+    - Expected vs. actual behavior
+    - Screenshots if applicable
+    - Browser/OS information
+  </Step>
+</Steps>
+
+### Suggesting Features
+
+Feature requests should:
+
+- Align with the project's privacy-first philosophy
+- Maintain clinical accuracy of the instrument
+- Improve accessibility or user experience
+- Be described clearly with use cases
+
+<Warning>
+  Features that require tracking, analytics, or external API calls will likely not be accepted. This project is fully offline-first.
+</Warning>
+
+### Submitting Code Changes
+
+<Steps>
+  <Step title="Fork and Clone">
+    ```bash
+    git clone https://github.com/yourusername/raads-r-self-host.git
+    cd raads-r-self-host
+    npm install
+    ```
+  </Step>
+
+  <Step title="Create a Branch">
+    ```bash
+    git checkout -b feature/your-feature-name
+    ```
+    
+    Branch naming conventions:
+    - `feature/` - New features
+    - `fix/` - Bug fixes
+    - `docs/` - Documentation updates
+    - `refactor/` - Code refactoring
+    - `test/` - Test additions or fixes
+  </Step>
+
+  <Step title="Make Your Changes">
+    - Write clean, readable TypeScript code
+    - Follow existing code style and conventions
+    - Add comments for complex logic
+    - Update tests if needed
+  </Step>
+
+  <Step title="Test Thoroughly">
+    ```bash
+    npm run test        # Run all tests
+    npm run lint        # Check code quality
+    npm run build       # Ensure it builds
+    npm run dev         # Manual testing
+    ```
+  </Step>
+
+  <Step title="Commit Your Changes">
+    Use clear, descriptive commit messages:
+    
+    ```bash
+    git commit -m "fix: correct reverse scoring for normative items"
+    ```
+    
+    Commit message format:
+    - `feat:` - New feature
+    - `fix:` - Bug fix
+    - `docs:` - Documentation
+    - `test:` - Test changes
+    - `refactor:` - Code refactoring
+    - `style:` - Formatting, no code change
+  </Step>
+
+  <Step title="Push and Create Pull Request">
+    ```bash
+    git push origin feature/your-feature-name
+    ```
+    
+    Open a PR on GitHub with:
+    - Clear title and description
+    - Reference to related issues
+    - Screenshots for UI changes
+    - Test results confirmation
+  </Step>
+</Steps>
+
+## Development Standards
+
+### Code Quality
+
+- **TypeScript**: Use strict typing, avoid `any`
+- **Components**: Keep components focused and single-purpose
+- **Hooks**: Extract reusable logic into custom hooks
+- **Accessibility**: Maintain WCAG 2.1 AA compliance
+- **Performance**: Avoid unnecessary re-renders and computations
+
+<CodeGroup>
+```typescript Good Example
+interface Props {
+  score: number;
+  maxScore: number;
+}
+
+function ScoreDisplay({ score, maxScore }: Props) {
+  const percentage = Math.round((score / maxScore) * 100)
+  return <span>{percentage}%</span>
+}
+```
+
+```typescript Avoid
+function ScoreDisplay(props: any) {
+  // Avoid: untyped props, unclear logic
+  return <span>{props.score}</span>
+}
+```
+</CodeGroup>
+
+### Testing Requirements
+
+All code changes should include appropriate tests:
+
+- **Unit Tests**: Test individual functions and logic
+- **Integration Tests**: Test component interactions
+- **Golden Tests**: Validate against known correct outputs
+
+<Steps>
+  <Step title="Write Tests">
+    Add tests in `src/__tests__/`:
+    
+    ```typescript
+    import { describe, it, expect } from 'vitest'
+    import { yourFunction } from '../your-module'
+    
+    describe('yourFunction', () => {
+      it('should handle normal case', () => {
+        expect(yourFunction(input)).toBe(expectedOutput)
+      })
+      
+      it('should handle edge case', () => {
+        expect(yourFunction(edgeInput)).toBe(edgeOutput)
+      })
+    })
+    ```
+  </Step>
+
+  <Step title="Run Tests">
+    ```bash
+    npm run test
+    ```
+    
+    Ensure all tests pass before submitting PR
+  </Step>
+</Steps>
+
+### Documentation
+
+Document your changes:
+
+- **Code Comments**: Explain "why" not "what"
+- **JSDoc**: Add for public functions
+- **README Updates**: For feature additions
+- **Type Definitions**: Keep TypeScript types accurate
+
+```typescript
+/**
+ * Calculates domain scores with reverse scoring for normative items.
+ * 
+ * @param responses - User responses (0-3) keyed by item ID
+ * @param dataset - Complete questionnaire dataset
+ * @returns Calculated results with domain and total scores
+ */
+export function calculateResults(
+  responses: Responses,
+  dataset: Dataset
+): Results {
+  // Implementation
+}
+```
+
+## Clinical Accuracy Guidelines
+
+<Warning>
+  Changes affecting scoring, questions, or clinical thresholds require special care.
+</Warning>
+
+If your contribution involves:
+
+### Scoring Logic
+- Cross-reference with the [original RAADS-R paper](https://pmc.ncbi.nlm.nih.gov/articles/PMC3134766/)
+- Validate against golden test vectors
+- Ensure both scoring engines (`scoring.ts` and `scoring-alt.ts`) remain synchronized
+- Document the clinical justification
+
+### Question Text
+- Preserve the exact clinical wording from the published instrument
+- Any modifications should be clearly documented and justified
+- Update tests to reflect changes
+
+### Thresholds
+- Only modify based on validated research
+- Include citations in your PR description
+- Update documentation to explain the change
+
+## Privacy & Security
+
+This project is privacy-first. Contributions must:
+
+- **Never add external API calls** (except for static file serving)
+- **Never add tracking or analytics**
+- **Never add cookies** (beyond optional localStorage)
+- **Keep all data client-side**
+- **Maintain opt-in consent** for any data persistence
+
+<Tip>
+  If you're unsure whether a feature aligns with privacy principles, open an issue to discuss before implementing.
+</Tip>
+
+## Pull Request Checklist
+
+Before submitting your PR, ensure:
+
+- [ ] Code follows existing style and conventions
+- [ ] All tests pass (`npm run test`)
+- [ ] No linting errors (`npm run lint`)
+- [ ] Production build works (`npm run build`)
+- [ ] Changes are documented (code comments, README, etc.)
+- [ ] Commit messages are clear and descriptive
+- [ ] PR description explains the change and why it's needed
+- [ ] Screenshots included for UI changes
+- [ ] No breaking changes (or clearly documented if necessary)
+- [ ] Privacy principles maintained (no tracking, no external calls)
+
+## Review Process
+
+<Steps>
+  <Step title="Initial Review">
+    Maintainers will review your PR within 1-2 weeks
+  </Step>
+
+  <Step title="Feedback">
+    Address any requested changes or questions
+  </Step>
+
+  <Step title="Approval">
+    Once approved, maintainers will merge your PR
+  </Step>
+
+  <Step title="Release">
+    Your contribution will be included in the next release
+  </Step>
+</Steps>
+
+## Getting Help
+
+If you need help:
+
+- **Documentation**: Check the [Development Setup](/development/setup) and [Project Structure](/development/project-structure) guides
+- **Questions**: Open a GitHub issue with the "question" label
+- **Discussion**: Start a discussion in GitHub Discussions
+
+<Note>
+  We appreciate all contributions, whether it's code, documentation, bug reports, or feature ideas. Thank you for helping make this tool better!
+</Note>
+
+## Licence
+
+By contributing to this project, you agree that your contributions will be licensed under the [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) licence.
+
+The RAADS-R instrument is from a published research paper and is used under the Creative Commons Attribution-NonCommercial licence.
+
+## Attribution
+
+Significant contributors may be recognized in the project README. Contributions are tracked through Git commit history.
+
+## Next Steps
+
+- Set up your [Local Development Environment](/development/setup)
+- Understand the [Project Structure](/development/project-structure)
+- Learn about [Customization Options](/development/customization)

@@ -1,0 +1,190 @@
+---
+title: Local Development Setup
+description: Get your local development environment up and running for RAADS-R Self-Host
+---
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Node.js** v18 or higher
+- **npm** v9 or higher (comes with Node.js)
+- A code editor (VS Code recommended)
+- Git (for version control)
+
+## Clone the Repository
+
+First, clone the repository to your local machine:
+
+```bash
+git clone https://github.com/yourusername/raads-r-self-host.git
+cd raads-r-self-host
+```
+
+## Installation
+
+<Steps>
+  <Step title="Install Dependencies">
+    Install all required npm packages:
+    
+    ```bash
+    npm install
+    ```
+    
+    This will install all dependencies listed in `package.json`, including:
+    - React 19.2.0
+    - Vite 7.3.1
+    - TypeScript 5.9.3
+    - Tailwind CSS v4.2.1
+    - Vitest 4.0.18
+  </Step>
+
+  <Step title="Start Development Server">
+    Run the development server:
+    
+    ```bash
+    npm run dev
+    ```
+    
+    The application will be available at `http://localhost:5173`
+    
+    <Note>
+      The dev server includes hot module replacement (HMR), so your changes will appear instantly without a full page reload.
+    </Note>
+  </Step>
+
+  <Step title="Verify Installation">
+    Open your browser and navigate to `http://localhost:5173`. You should see the RAADS-R questionnaire landing page.
+    
+    Try toggling dark mode and navigating through the interface to ensure everything works correctly.
+  </Step>
+</Steps>
+
+## Available Scripts
+
+The project includes several npm scripts for development and testing:
+
+<CodeGroup>
+```bash Development Server
+npm run dev
+```
+
+```bash Production Build
+npm run build
+```
+
+```bash Preview Production Build
+npm run preview
+```
+
+```bash Run Tests
+npm run test
+```
+
+```bash Run Tests in Watch Mode
+npm test:watch
+```
+
+```bash Lint Code
+npm run lint
+```
+</CodeGroup>
+
+### Script Details
+
+- **`npm run dev`** - Starts Vite development server with HMR on port 5173
+- **`npm run build`** - Compiles TypeScript and builds production bundle to `dist/`
+- **`npm run lint`** - Runs ESLint on the codebase to check for code quality issues
+- **`npm run preview`** - Serves the production build locally for testing
+- **`npm run test`** - Runs all Vitest tests once and exits
+- **`npm run test:watch`** - Runs tests in watch mode, re-running on file changes
+
+## Development Workflow
+
+<Steps>
+  <Step title="Make Changes">
+    Edit files in the `src/` directory. The dev server will automatically reload.
+  </Step>
+
+  <Step title="Run Tests">
+    Before committing, run the test suite:
+    
+    ```bash
+    npm run test
+    ```
+    
+    Ensure all 62+ tests pass. The test suite includes:
+    - Scoring algorithm validation
+    - Dataset structural integrity checks
+    - Golden test vectors for uniform response patterns
+  </Step>
+
+  <Step title="Lint Your Code">
+    Check for code quality issues:
+    
+    ```bash
+    npm run lint
+    ```
+  </Step>
+
+  <Step title="Build for Production">
+    Test the production build locally:
+    
+    ```bash
+    npm run build
+    npm run preview
+    ```
+  </Step>
+</Steps>
+
+## Environment Configuration
+
+<Note>
+  This project has **no environment variables** or external configuration. Everything runs client-side with no backend required.
+</Note>
+
+The application is fully offline-first and requires no API keys, database connections, or external services.
+
+## Troubleshooting
+
+### Port Already in Use
+
+If port 5173 is already in use, Vite will automatically try the next available port (5174, 5175, etc.). Check the terminal output for the actual URL.
+
+### Type Errors
+
+If you encounter TypeScript errors:
+
+```bash
+# Rebuild TypeScript declarations
+npm run build
+```
+
+### Module Not Found
+
+If you see module resolution errors:
+
+```bash
+# Clear node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### Tests Failing
+
+If tests fail unexpectedly:
+
+```bash
+# Run tests in verbose mode
+npm run test -- --reporter=verbose
+```
+
+<Tip>
+  Use `npm run test:watch` during development to get instant feedback as you write code.
+</Tip>
+
+## Next Steps
+
+- Review the [Project Structure](/development/project-structure) to understand the codebase organization
+- Learn how to [Customize](/development/customization) the questionnaire or UI
+- Read the [Contributing Guidelines](/development/contributing) before submitting changes

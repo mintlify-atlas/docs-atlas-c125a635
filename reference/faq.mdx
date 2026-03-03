@@ -1,0 +1,192 @@
+---
+title: Frequently Asked Questions
+description: Common questions about the RAADS-R Self-Host application
+---
+
+## General Questions
+
+<AccordionGroup>
+  <Accordion title="What is the RAADS-R?">
+    The RAADS-R (Ritvo Autism Asperger Diagnostic Scale, Revised) is a validated 80-item screening questionnaire designed to assist in identifying autism spectrum disorder in adults. It evaluates traits across four domains: Social Relatedness, Circumscribed Interests, Language, and Sensory Motor.
+
+    See the [Clinical Background](/reference/clinical-background) page for detailed information.
+  </Accordion>
+
+  <Accordion title="Is this a diagnostic tool?">
+    No. The RAADS-R is a screening tool, not a diagnostic instrument. Results should be discussed with a qualified healthcare professional who can provide a comprehensive assessment. Only a trained clinician can diagnose autism spectrum disorder.
+  </Accordion>
+
+  <Accordion title="Who should use this questionnaire?">
+    The RAADS-R is designed for adults (18+ years) who want to explore whether they have autism-related traits. It can be used for self-reflection, to prepare for a clinical evaluation, or as part of a research study. It should not be used as the sole basis for self-diagnosis.
+  </Accordion>
+
+  <Accordion title="How long does it take to complete?">
+    Most users complete all 80 questions in 15-30 minutes. You can save your progress at any time and return later if needed.
+  </Accordion>
+</AccordionGroup>
+
+## Privacy & Data
+
+<AccordionGroup>
+  <Accordion title="Is my data private?">
+    Yes. All data stays in your browser. This application:
+    
+    - Runs entirely offline once loaded
+    - Does not send any data to external servers
+    - Does not use cookies or analytics
+    - Does not track you in any way
+    
+    Your responses are only stored locally if you explicitly enable the "Save Progress" feature.
+  </Accordion>
+
+  <Accordion title="How does the Save Progress feature work?">
+    The "Save Progress" feature uses your browser's localStorage to save your responses. This is:
+    
+    - **Opt-in only:** You must explicitly enable it
+    - **Local only:** Data never leaves your device
+    - **Deletable:** Use the "Delete My Data" button to clear all saved data at any time
+    - **Browser-specific:** Saved data is only accessible in the same browser on the same device
+  </Accordion>
+
+  <Accordion title="Can I export my results?">
+    Yes. You can export your results in three formats:
+    
+    - **JSON:** Machine-readable format containing all responses and scores
+    - **CSV:** Spreadsheet format with responses and domain scores
+    - **PDF:** Print-friendly format with full results and clinical interpretation
+    
+    All exports are generated locally in your browser.
+  </Accordion>
+
+  <Accordion title="What happens if I clear my browser data?">
+    If you clear your browser's localStorage, any saved progress will be permanently deleted. If you want to preserve your responses, export them before clearing browser data.
+  </Accordion>
+</AccordionGroup>
+
+## Using the Application
+
+<AccordionGroup>
+  <Accordion title="Can I skip questions?">
+    No. All 80 questions must be answered to generate valid results. This ensures accurate scoring according to the clinical methodology. You can save your progress and return later if you need a break.
+  </Accordion>
+
+  <Accordion title="Can I change my answers?">
+    Yes. You can navigate back to any question and change your response before viewing results. Once you view results, you can retake the questionnaire if desired.
+  </Accordion>
+
+  <Accordion title="What do the response options mean?">
+    The RAADS-R uses four response options:
+    
+    - **True now and when I was young:** The statement applies to you currently and also applied during childhood
+    - **True only now:** The statement applies to you currently but did not apply during childhood
+    - **True only when I was younger than 16:** The statement applied during childhood but does not apply currently
+    - **Never true:** The statement has never applied to you
+  </Accordion>
+
+  <Accordion title="Does the application work offline?">
+    Yes. Once the page has loaded, the application works completely offline. You can disconnect from the internet and continue using it without any issues.
+  </Accordion>
+
+  <Accordion title="Is dark mode available?">
+    Yes. The application supports both dark and light modes. It will automatically match your system preference, and you can manually toggle between modes using the theme switcher.
+  </Accordion>
+</AccordionGroup>
+
+## Scoring & Results
+
+<AccordionGroup>
+  <Accordion title="How is the RAADS-R scored?">
+    Each question is scored 0-3 points based on your response. The application automatically:
+    
+    - Sums scores for each of the four domains
+    - Calculates the total score (sum of all domains)
+    - Applies reverse scoring to 17 normative items
+    - Compares scores to clinical thresholds
+    
+    See the [Scoring Methodology](/technical/scoring-methodology) page for details.
+  </Accordion>
+
+  <Accordion title="What do my scores mean?">
+    Scores above the clinical thresholds suggest the presence of autism-related traits:
+    
+    - **Social Relatedness:** >30
+    - **Circumscribed Interests:** >14
+    - **Language:** >3
+    - **Sensory Motor:** >15
+    - **Total:** >65
+    
+    However, only a qualified healthcare professional can interpret these results in the context of a comprehensive assessment.
+  </Accordion>
+
+  <Accordion title="Can I trust the scoring accuracy?">
+    Yes. This implementation:
+    
+    - Uses the exact question wording from the published RAADS-R
+    - Applies the official scoring methodology
+    - Correctly reverse-scores all 17 normative items
+    - Has been validated with 62 automated tests
+    - Cross-validates results using two independent scoring engines
+    
+    See the [Testing](/technical/testing) page for validation details.
+  </Accordion>
+
+  <Accordion title="What if I score below the thresholds?">
+    Scoring below the clinical thresholds suggests you may not have clinically significant autism-related traits. However, the RAADS-R is not perfect and can produce false negatives. If you have concerns about autism, discuss them with a healthcare professional regardless of your score.
+  </Accordion>
+</AccordionGroup>
+
+## Technical Questions
+
+<AccordionGroup>
+  <Accordion title="Can I self-host this application?">
+    Yes. This is a self-hosted application. You can:
+    
+    - Download and run it on your own server
+    - Run it locally on your computer
+    - Deploy it to any static hosting service
+    
+    See the [Quickstart](/quickstart) guide for deployment instructions.
+  </Accordion>
+
+  <Accordion title="What technologies are used?">
+    The application is built with:
+    
+    - **React 18** with TypeScript
+    - **Vite** for build tooling
+    - **Tailwind CSS v4** for styling
+    - **Vitest** for testing (62 tests)
+    
+    See the [Architecture](/technical/architecture) page for details.
+  </Accordion>
+
+  <Accordion title="Can I customize the application?">
+    Yes. The source code is available under the CC BY-NC 4.0 license. You can modify it for non-commercial purposes. See the [Customization](/development/customization) and [Attribution](/reference/attribution) pages for details.
+  </Accordion>
+
+  <Accordion title="How do I report bugs or suggest features?">
+    Please open an issue on the [GitHub repository](https://github.com/spike1478/raads-r-self-host). Include details about your browser, operating system, and steps to reproduce the issue.
+  </Accordion>
+</AccordionGroup>
+
+## Accessibility
+
+<AccordionGroup>
+  <Accordion title="Is the application accessible?">
+    Yes. The application includes:
+    
+    - Full keyboard navigation support
+    - Screen reader compatibility
+    - Reduced motion support for users with vestibular disorders
+    - High contrast support in both light and dark modes
+    - Semantic HTML structure
+  </Accordion>
+
+  <Accordion title="Are there keyboard shortcuts?">
+    Yes. You can navigate the questionnaire entirely with the keyboard:
+    
+    - **Tab/Shift+Tab:** Move between questions and options
+    - **Arrow keys:** Select response options
+    - **Space/Enter:** Confirm selection
+    - **Page Up/Down:** Navigate between pages (if implemented)
+  </Accordion>
+</AccordionGroup>

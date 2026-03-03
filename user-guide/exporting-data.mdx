@@ -1,0 +1,362 @@
+---
+title: Exporting Data
+description: How to export your RAADS-R results in JSON, CSV, and PDF formats
+---
+
+After completing the questionnaire, you can export your results in three different formats. Each format serves different purposes and use cases.
+
+## Export Options
+
+Three export buttons appear on the results page:
+
+- **Export JSON**: Structured data format for programmatic use
+- **Export CSV**: Spreadsheet format for analysis in Excel or Google Sheets
+- **Export PDF**: Printable document format for sharing with professionals
+
+All exports are generated client-side in your browser. No data is sent to any server.
+
+Implementation in `ExportButtons.tsx` and `export.ts`
+
+## JSON Export
+
+### When to Use JSON
+
+- Long-term archival of complete response data
+- Importing into other applications or databases
+- Programmatic analysis or integration
+- Preserving full fidelity of all responses and metadata
+
+### JSON Structure
+
+The exported JSON file includes:
+
+```json
+{
+  "quiz": "RAADS-R",
+  "completedAt": "2026-03-03T22:15:30.123Z",
+  "results": {
+    "total": 127,
+    "totalMax": 240,
+    "totalCutoff": 65,
+    "aboveTotalCutoff": true,
+    "domains": [
+      {
+        "key": "social",
+        "label": "Social Relatedness",
+        "score": 45,
+        "maxScore": 117,
+        "cutoff": 30,
+        "aboveCutoff": true
+      },
+      {
+        "key": "interests",
+        "label": "Circumscribed Interests",
+        "score": 28,
+        "maxScore": 42,
+        "cutoff": 14,
+        "aboveCutoff": true
+      },
+      {
+        "key": "language",
+        "label": "Language",
+        "score": 12,
+        "maxScore": 21,
+        "cutoff": 3,
+        "aboveCutoff": true
+      },
+      {
+        "key": "sensory",
+        "label": "Sensory Motor",
+        "score": 42,
+        "maxScore": 60,
+        "cutoff": 15,
+        "aboveCutoff": true
+      }
+    ]
+  },
+  "responses": [
+    {
+      "id": 1,
+      "text": "I am a sympathetic person.",
+      "domain": "Social Relatedness",
+      "response": "True only now",
+      "responseIndex": 1,
+      "score": 1
+    },
+    {
+      "id": 2,
+      "text": "I often use words and phrases from movies and television in conversations.",
+      "domain": "Language",
+      "response": "True now and when I was young",
+      "responseIndex": 0,
+      "score": 3
+    }
+    // ... 78 more response objects
+  ]
+}
+```
+
+### JSON Fields Explained
+
+<Accordion title="Top-Level Fields">
+  - **quiz**: Always "RAADS-R"
+  - **completedAt**: ISO 8601 timestamp of export time
+  - **results**: Complete results object with scores and thresholds
+  - **responses**: Array of all 80 question responses with details
+</Accordion>
+
+<Accordion title="Response Object Fields">
+  - **id**: Question number (1-80)
+  - **text**: Full question text
+  - **domain**: Which subscale the question belongs to
+  - **response**: The selected response option text
+  - **responseIndex**: Numeric index (0-3) of the response
+  - **score**: Points earned for this question (0-3)
+</Accordion>
+
+### Using JSON Export
+
+Click "Export JSON" to download `raads-r-results.json`. The file can be:
+
+- Opened in any text editor
+- Parsed by programming languages (Python, JavaScript, etc.)
+- Imported into data analysis tools
+- Stored as a backup of your complete responses
+
+Implementation in `export.ts:46-50`
+
+## CSV Export
+
+### When to Use CSV
+
+- Analysis in spreadsheet software (Excel, Google Sheets, LibreOffice)
+- Creating custom visualizations or charts
+- Filtering and sorting responses by domain or score
+- Sharing data in a widely compatible format
+
+### CSV Structure
+
+The CSV file contains two sections:
+
+#### 1. Individual Responses Table
+
+Headers:
+```
+Item,Text,Domain,Response,Response Index,Score
+```
+
+Example rows:
+```csv
+Item,Text,Domain,Response,Response Index,Score
+1,"I am a sympathetic person.",Social Relatedness,True only now,1,1
+2,"I often use words and phrases from movies and television in conversations.",Language,True now and when I was young,0,3
+3,"I am often surprised when others tell me I have been rude.",Social Relatedness,True now and when I was young,0,3
+```
+
+#### 2. Summary Section
+
+After the 80 response rows, a summary section includes:
+
+```csv
+
+Summary
+Total,127,,Max,240,Threshold: 65
+Social Relatedness,45,,Max,117,Threshold: 30
+Circumscribed Interests,28,,Max,42,Threshold: 14
+Language,12,,Max,21,Threshold: 3
+Sensory Motor,42,,Max,60,Threshold: 15
+```
+
+### CSV Features
+
+<Info>
+  Question text is properly escaped with quotes and double-quote characters are escaped as `""` for CSV compatibility.
+</Info>
+
+- Compatible with all major spreadsheet applications
+- Text fields containing commas or quotes are properly escaped
+- Summary data appears at the bottom for easy reference
+- All 80 questions included with full details
+
+Implementation in `export.ts:52-76`
+
+### Using CSV Export
+
+Click "Export CSV" to download `raads-r-results.csv`. You can:
+
+1. Open directly in Excel, Google Sheets, or Numbers
+2. Filter responses by domain to analyze specific subscales
+3. Sort by score to see highest-scoring items
+4. Create pivot tables or custom charts
+5. Calculate additional statistics
+
+## PDF Export
+
+### When to Use PDF
+
+- Sharing with healthcare professionals
+- Printing a physical copy for your records
+- Creating a permanent, formatted document
+- Discussing results in appointments
+
+### PDF Contents
+
+The PDF export opens in a new browser window and includes:
+
+#### 1. Header
+- **Title**: "RAADS-R Results"
+- **Date**: Formatted date of export (e.g., "3 March 2026")
+
+#### 2. Summary Table
+
+| Field | Value |
+|-------|-------|
+| Total Score | 127 / 240 |
+| Threshold | 65 |
+| Status | Above threshold |
+
+#### 3. Subscale Scores Table
+
+| Subscale | Score | Max | Threshold | Status |
+|----------|-------|-----|-----------|--------|
+| Social Relatedness | 45 | 117 | 30 | Above |
+| Circumscribed Interests | 28 | 42 | 14 | Above |
+| Language | 12 | 21 | 3 | Above |
+| Sensory Motor | 42 | 60 | 15 | Above |
+
+#### 4. All Responses Table
+
+| # | Question | Subscale | Response | Points |
+|---|----------|----------|----------|--------|
+| 1 | I am a sympathetic person. | Social Relatedness | True only now | 1 |
+| 2 | I often use words and phrases... | Language | True now and when I was young | 3 |
+| ... | ... | ... | ... | ... |
+
+#### 5. Footer
+
+<Note>
+  "This is a self-report screening tool, not a diagnostic instrument."
+</Note>
+
+### PDF Styling
+
+The PDF is professionally formatted with:
+
+- Clean, readable typography (system fonts)
+- Table borders and zebra striping for readability  
+- Compact 11px font size to fit all data
+- Print-optimized layout
+- Page break handling for long tables
+
+Implementation in `export.ts:78-178`
+
+### Using PDF Export
+
+Click "Export PDF" to:
+
+1. **View**: A new browser window opens with the formatted PDF
+2. **Print**: The browser print dialog automatically appears
+3. **Save**: Use the print dialog's "Save as PDF" option to create a file
+4. **Share**: Print to paper or save digitally to share with professionals
+
+<Warning>
+  The PDF export requires JavaScript and pop-up permissions. If nothing happens, check that your browser allows pop-ups from this site.
+</Warning>
+
+## Print View Alternative
+
+In addition to PDF export, a separate "Print View" button offers:
+
+- Browser-native print dialog
+- Print directly from the results page
+- Similar formatted output to PDF export
+- Alternative if PDF export doesn't work in your browser
+
+Implementation in `PrintView.tsx` and `Results.tsx:152-156`
+
+## Data Privacy
+
+<Info>
+  All exports are generated entirely in your browser using client-side JavaScript. No data is transmitted to any server during the export process.
+</Info>
+
+### Export Process
+
+1. Your response data is read from browser memory (localStorage if enabled)
+2. Export functions process the data into the target format
+3. A download is triggered using browser APIs (Blob URLs)
+4. The file is saved to your device's download folder
+5. No network requests are made
+
+### Security Considerations
+
+- Exported files contain your complete questionnaire responses
+- Store files securely if they contain sensitive information
+- Consider using encryption if emailing to healthcare providers
+- Delete exports from shared computers after use
+
+## Comparing Export Formats
+
+| Feature | JSON | CSV | PDF |
+|---------|------|-----|-----|
+| **File Size** | Medium | Small | Large |
+| **Human Readable** | Moderate | High | Highest |
+| **Machine Readable** | Highest | High | Low |
+| **Spreadsheet Compatible** | No | Yes | No |
+| **Print Ready** | No | No | Yes |
+| **Full Metadata** | Yes | Yes | Yes |
+| **Easy Sharing** | Moderate | Moderate | Highest |
+
+## Best Practices
+
+<Steps>
+  <Step title="Export Immediately After Completion">
+    Don't rely solely on browser localStorage. Export your results right away as a backup.
+  </Step>
+  
+  <Step title="Use Multiple Formats">
+    Export both JSON (for archival) and PDF (for sharing) to cover different use cases.
+  </Step>
+  
+  <Step title="Keep Files Secure">
+    Store exported files in a secure location, especially if they contain sensitive information.
+  </Step>
+  
+  <Step title="Verify Export Completeness">
+    Open the exported file to confirm all 80 responses are included before deleting browser data.
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+<Accordion title="Export button doesn't work">
+  - Check if pop-ups are blocked (especially for PDF)
+  - Ensure JavaScript is enabled
+  - Try a different browser
+  - Check browser console for error messages
+</Accordion>
+
+<Accordion title="CSV opens incorrectly in Excel">
+  - Try importing the CSV instead of opening directly
+  - Use Excel's "Data > From Text/CSV" import feature
+  - Ensure UTF-8 encoding is selected
+</Accordion>
+
+<Accordion title="PDF won't save">
+  - Use the browser print dialog's "Save as PDF" option
+  - Try the "Print View" button as an alternative
+  - Check if your browser has a built-in PDF viewer enabled
+</Accordion>
+
+## File Information
+
+Default filenames for exports:
+
+- **JSON**: `raads-r-results.json`
+- **CSV**: `raads-r-results.csv`  
+- **PDF**: (browser-generated, typically based on page title)
+
+You can rename these files after download to include dates or identifiers:
+
+- `raads-r-results-2026-03-03.json`
+- `raads-r-results-john-doe.pdf`

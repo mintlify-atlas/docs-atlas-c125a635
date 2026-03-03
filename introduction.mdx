@@ -1,0 +1,124 @@
+---
+title: Introduction
+description: Self-hosted, offline-first web version of the RAADS-R screening questionnaire with full privacy and no tracking
+---
+
+# RAADS-R Self-Host
+
+A self-hosted, offline-first web version of the RAADS-R (Ritvo Autism Asperger Diagnostic Scale, Revised) screening questionnaire. All 80 items with exact clinical wording, proper reverse scoring for normative items, and domain-level breakdowns with clinical thresholds.
+
+## What It Does
+
+The RAADS-R is an 80-question screening tool designed for adults, measuring across four validated clinical subscales:
+
+- **Social Relatedness** (39 items, threshold >30)
+- **Circumscribed Interests** (14 items, threshold >14)
+- **Language** (7 items, threshold >3)
+- **Sensory Motor** (20 items, threshold >15)
+- **Total** (threshold >65, max 240)
+
+Response options use the exact RAADS-R wording: "True now and when I was young", "True only now", "True only when I was younger than 16", "Never true". Normative items (17 of 80) are reverse-scored according to the published methodology.
+
+<Warning>
+This is not a diagnostic tool. Results should be discussed with a qualified healthcare professional who can provide a comprehensive assessment.
+</Warning>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Privacy First" icon="shield-check" href="#privacy-features">
+    All data stays in your browser. No cookies, no analytics, no external requests beyond serving static files.
+  </Card>
+  
+  <Card title="Offline Ready" icon="wifi-slash" href="#offline-capabilities">
+    Fully functional offline after initial load. No backend required, works entirely in the browser.
+  </Card>
+  
+  <Card title="Export Results" icon="download" href="#export-options">
+    Export results as JSON, CSV, or PDF. Print-friendly results view with full response table.
+  </Card>
+  
+  <Card title="Accessible" icon="universal-access" href="#accessibility">
+    Dark/light mode, keyboard navigation, reduced motion support, and screen reader friendly.
+  </Card>
+</CardGroup>
+
+## Privacy Features
+
+The application is designed with privacy as the top priority:
+
+- **No tracking**: No cookies, analytics, or external requests
+- **Client-side only**: All processing happens in your browser
+- **Optional persistence**: localStorage is opt-in only via the "Save Progress" feature
+- **Easy deletion**: "Delete My Data" button clears all stored information instantly
+- **No server**: Static files only, no backend to store or process data
+
+## Offline Capabilities
+
+Once loaded, the application works completely offline:
+
+- All 80 questions and scoring logic are bundled
+- No API calls or external dependencies during use
+- Results calculated entirely client-side
+- Can be deployed to any static hosting provider
+
+## Export Options
+
+Results can be exported in multiple formats for sharing with healthcare providers:
+
+- **JSON**: Machine-readable format with complete response data
+- **CSV**: Spreadsheet-compatible format for analysis
+- **PDF**: Professional report format (via browser print-to-PDF)
+- **Print View**: Optimized layout with full response table
+
+## Accessibility
+
+Built with accessibility standards in mind:
+
+- **Theme support**: Dark/light mode with system preference detection
+- **Keyboard navigation**: Full keyboard accessibility throughout
+- **Motion sensitivity**: Reduced motion support for transitions
+- **Screen readers**: Proper ARIA labels and semantic HTML
+- **Skip links**: Quick navigation to main content
+
+## Tech Stack
+
+Modern, lightweight stack for optimal performance:
+
+- **Vite + React 18 + TypeScript**: Fast builds and type safety
+- **Tailwind CSS v4**: Utility-first styling with dark mode
+- **Vitest**: 62 tests validating scoring accuracy
+- **No dependencies**: Minimal runtime dependencies for security
+
+## Scoring Validation
+
+The scoring implementation is thoroughly tested:
+
+- Two independent scoring engines cross-validated
+- Golden test vectors verify correct totals for all uniform response patterns
+- Dataset structural tests confirm all 80 items with no overlaps
+- Validates against published RAADS-R methodology
+
+## Attribution
+
+The RAADS-R questionnaire items and scoring methodology are from:
+
+> Ritvo, R.A., Ritvo, E.R., Guthrie, D. et al. (2011). The Ritvo Autism Asperger Diagnostic Scale-Revised (RAADS-R): A Scale to Assist the Diagnosis of Autism Spectrum Disorder in Adults: An International Validation Study. *Journal of Autism and Developmental Disorders*, 41(8), 1076–1085. [PMC3134766](https://pmc.ncbi.nlm.nih.gov/articles/PMC3134766/)
+
+The original paper is published under a [Creative Commons Attribution-NonCommercial licence](https://creativecommons.org/licenses/by-nc/4.0/).
+
+## Licence
+
+This project is licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/).
+
+## Get Started
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get the app running in under 5 minutes with our quick deployment guide.
+  </Card>
+  
+  <Card title="Deployment Options" icon="server" href="/deployment">
+    Explore different deployment methods including static hosting and Docker.
+  </Card>
+</CardGroup>

@@ -1,0 +1,467 @@
+---
+title: Deployment
+description: Deploy RAADS-R Self-Host to static hosting providers, Docker, or self-hosted infrastructure
+---
+
+# Deployment Guide
+
+RADS-R Self-Host is a static web application that can be deployed to any hosting provider that serves HTML, CSS, and JavaScript files. No backend or database required.
+
+## Deployment Overview
+
+The application is built using Vite, which generates a production-optimized build in the `dist/` directory. This folder contains everything needed to run the application.
+
+<Note>
+All hosting options serve the same static files. Choose based on your familiarity, existing infrastructure, or specific requirements.
+</Note>
+
+## Build for Production
+
+Before deploying, create a production build:
+
+```bash
+npm run build
+```
+
+This command:
+
+1. Compiles TypeScript to JavaScript
+2. Bundles all dependencies
+3. Optimizes assets (minification, tree-shaking)
+4. Outputs to the `dist/` directory
+
+The `dist/` folder structure:
+
+```
+dist/
+├── index.html          # Entry point
+├── assets/
+│   ├── index-[hash].js # Bundled JavaScript
+│   └── index-[hash].css # Bundled CSS
+└── vite.svg           # Static assets
+```
+
+<Tip>
+The `[hash]` in filenames enables cache busting, ensuring users get the latest version after updates.
+</Tip>
+
+## Static Hosting Providers
+
+Deploy to any static hosting provider with minimal configuration.
+
+### Netlify
+
+Deploy to Netlify with automatic builds from Git:
+
+<Steps>
+  <Step title="Connect repository">
+    1. Sign in to [Netlify](https://netlify.com)
+    2. Click "Add new site" → "Import an existing project"
+    3. Connect your Git provider and select the repository
+  </Step>
+
+  <Step title="Configure build settings">
+    Set the following build settings:
+    
+    - **Build command**: `npm run build`
+    - **Publish directory**: `dist`
+    - **Node version**: 18 or higher (set in Environment variables)
+  </Step>
+
+  <Step title="Deploy">
+    Click "Deploy site". Netlify will build and deploy automatically.
+    
+    Future pushes to your main branch will trigger automatic deployments.
+  </Step>
+</Steps>
+
+**Optional**: Create a `netlify.toml` for configuration:
+
+```toml netlify.toml
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+```
+
+### Vercel
+
+Deploy to Vercel with zero configuration:
+
+<Steps>
+  <Step title="Import project">
+    1. Sign in to [Vercel](https://vercel.com)
+    2. Click "Add New" → "Project"
+    3. Import your Git repository
+  </Step>
+
+  <Step title="Configure (auto-detected)">
+    Vercel automatically detects Vite projects and sets:
+    
+    - **Build command**: `npm run build`
+    - **Output directory**: `dist`
+    - **Install command**: `npm install`
+  </Step>
+
+  <Step title="Deploy">
+    Click "Deploy". Vercel builds and deploys with automatic previews for pull requests.
+  </Step>
+</Steps>
+
+### Cloudflare Pages
+
+Deploy to Cloudflare Pages with global CDN:
+
+<Steps>
+  <Step title="Create project">
+    1. Sign in to [Cloudflare](https://dash.cloudflare.com)
+    2. Navigate to Pages → "Create a project"
+    3. Connect your Git provider
+  </Step>
+
+  <Step title="Configure build">
+    Set build configuration:
+    
+    - **Framework preset**: Vite
+    - **Build command**: `npm run build`
+    - **Build output directory**: `dist`
+  </Step>
+
+  <Step title="Deploy">
+    Click "Save and Deploy". Future commits trigger automatic deployments.
+  </Step>
+</Steps>
+
+### GitHub Pages
+
+Deploy to GitHub Pages for free hosting:
+
+<Steps>
+  <Step title="Update vite.config.ts">
+    Set the base path for GitHub Pages:
+    
+    ```typescript vite.config.ts
+    import { defineConfig } from 'vite'
+    import react from '@vitejs/plugin-react'
+    import tailwindcss from '@tailwindcss/vite'
+    
+    export default defineConfig({
+      plugins: [react(), tailwindcss()],
+      base: '/raads-r-self-host/', // Replace with your repo name
+      test: {
+        globals: true,
+      },
+    })
+    ```
+  </Step>
+
+  <Step title="Build and deploy">
+    Build and push to gh-pages branch:
+    
+    ```bash
+    npm run build
+    git subtree push --prefix dist origin gh-pages
+    ```
+  </Step>
+
+  <Step title="Enable GitHub Pages">
+    1. Go to repository Settings → Pages
+    2. Source: Deploy from a branch
+    3. Branch: `gh-pages` → `/` (root)
+    4. Save
+  </Step>
+</Steps>
+
+**Alternative**: Use GitHub Actions for automated deployments:
+
+```yaml .github/workflows/deploy.yml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Build
+        run: npm run build
+        
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+```
+
+### AWS S3 + CloudFront
+
+Deploy to AWS with S3 for storage and CloudFront for CDN:
+
+<Steps>
+  <Step title="Create S3 bucket">
+    ```bash
+    aws s3 mb s3://raads-r-app
+    aws s3 website s3://raads-r-app --index-document index.html
+    ```
+  </Step>
+
+  <Step title="Upload build">
+    ```bash
+    npm run build
+    aws s3 sync dist/ s3://raads-r-app --delete
+    ```
+  </Step>
+
+  <Step title="Configure CloudFront (optional)">
+    Create a CloudFront distribution pointing to the S3 bucket for global CDN and HTTPS.
+  </Step>
+</Steps>
+
+## Docker Deployment
+
+Run the application in a Docker container with nginx:
+
+<Steps>
+  <Step title="Create Dockerfile">
+    Create a multi-stage Dockerfile:
+    
+    ```dockerfile Dockerfile
+    # Build stage
+    FROM node:18-alpine AS builder
+    
+    WORKDIR /app
+    
+    COPY package*.json ./
+    RUN npm install
+    
+    COPY . .
+    RUN npm run build
+    
+    # Production stage
+    FROM nginx:alpine
+    
+    COPY --from=builder /app/dist /usr/share/nginx/html
+    
+    # Optional: Custom nginx config
+    COPY nginx.conf /etc/nginx/conf.d/default.conf
+    
+    EXPOSE 80
+    
+    CMD ["nginx", "-g", "daemon off;"]
+    ```
+  </Step>
+
+  <Step title="Create nginx config (optional)">
+    ```nginx nginx.conf
+    server {
+        listen 80;
+        server_name localhost;
+        root /usr/share/nginx/html;
+        index index.html;
+
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        # Security headers
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+
+        # Cache static assets
+        location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Build and run">
+    ```bash
+    # Build the image
+    docker build -t raads-r-app .
+    
+    # Run the container
+    docker run -d -p 8080:80 raads-r-app
+    ```
+    
+    Access the application at `http://localhost:8080`
+  </Step>
+</Steps>
+
+**Docker Compose** (optional):
+
+```yaml docker-compose.yml
+version: '3.8'
+
+services:
+  raads-r:
+    build: .
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+```
+
+Run with: `docker-compose up -d`
+
+## Self-Hosted Options
+
+Deploy to your own infrastructure:
+
+### Apache
+
+1. Build the application: `npm run build`
+2. Copy `dist/` contents to Apache document root: `/var/www/html/`
+3. Configure `.htaccess` for SPA routing:
+
+```apache .htaccess
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+```
+
+### Nginx
+
+1. Build the application: `npm run build`
+2. Copy `dist/` contents to nginx html directory: `/usr/share/nginx/html/`
+3. Configure nginx for SPA routing:
+
+```nginx /etc/nginx/sites-available/raads-r
+server {
+    listen 80;
+    server_name your-domain.com;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+4. Enable site and reload nginx:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/raads-r /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+## Environment Considerations
+
+### HTTPS Requirement
+
+<Warning>
+Modern browsers require HTTPS for service workers and certain web APIs. Always deploy with HTTPS in production.
+</Warning>
+
+Most hosting providers (Netlify, Vercel, Cloudflare Pages) provide automatic HTTPS. For self-hosted:
+
+- Use [Let's Encrypt](https://letsencrypt.org/) for free SSL certificates
+- Configure nginx/Apache with SSL
+- Use Cloudflare for SSL termination
+
+### Base Path Configuration
+
+If deploying to a subdirectory (e.g., `example.com/raads-r/`), update `vite.config.ts`:
+
+```typescript vite.config.ts
+export default defineConfig({
+  base: '/raads-r/', // Set to your subdirectory path
+  // ... other config
+})
+```
+
+### Build Optimization
+
+The production build is automatically optimized by Vite:
+
+- **Minification**: JavaScript and CSS are minified
+- **Tree-shaking**: Unused code is removed
+- **Code splitting**: Automatic chunking for optimal loading
+- **Asset hashing**: Cache busting for static assets
+
+## Verification
+
+After deployment, verify the application works correctly:
+
+<Steps>
+  <Step title="Load the application">
+    Visit your deployment URL and ensure the landing page loads.
+  </Step>
+
+  <Step title="Test functionality">
+    - Start the questionnaire
+    - Answer a few questions
+    - Navigate forward and backward
+    - Test dark/light mode toggle
+  </Step>
+
+  <Step title="Check console">
+    Open browser DevTools and check for errors in the console.
+  </Step>
+
+  <Step title="Test offline mode">
+    Disconnect from the internet and verify the app still functions (after initial load).
+  </Step>
+</Steps>
+
+## Continuous Deployment
+
+Automate deployments with Git-based workflows:
+
+1. **Push to main branch** triggers automatic deployment
+2. **Pull request previews** for testing before merge (Netlify, Vercel)
+3. **Rollback capability** to previous versions if issues arise
+4. **Build logs** for debugging deployment failures
+
+<Tip>
+Most providers offer preview deployments for pull requests, allowing you to test changes before merging to production.
+</Tip>
+
+## Performance Considerations
+
+- **CDN**: Use providers with global CDN (Netlify, Vercel, Cloudflare)
+- **Caching**: Static assets are cached with far-future expires headers
+- **Compression**: Enable gzip/brotli compression on your server
+- **Lazy loading**: Vite automatically code-splits for optimal loading
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Customization" icon="gear" href="/development/customization">
+    Customize the questionnaire and UI to fit your needs.
+  </Card>
+  
+  <Card title="User Guide" icon="book-open" href="/user-guide/taking-the-questionnaire">
+    Learn how to use the questionnaire and interpret results.
+  </Card>
+</CardGroup>

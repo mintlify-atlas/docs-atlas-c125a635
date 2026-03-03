@@ -1,80 +1,236 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start
+description: Get RAADS-R Self-Host running in under 5 minutes
 ---
 
-## Get started in three steps
+# Quick Start Guide
 
-Get your documentation site running locally and make your first customization.
+Get the RAADS-R Self-Host application up and running in minutes. This guide will take you from clone to running app.
 
-### Step 1: Set up your local environment
+## Prerequisites
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+Before you begin, ensure you have:
+
+- **Node.js** version 18 or higher
+- **npm** (comes with Node.js)
+- **Git** for cloning the repository
+
+<Tip>
+Check your Node.js version with `node --version`. If you need to install or update Node.js, visit [nodejs.org](https://nodejs.org/).
+</Tip>
+
+## Installation Steps
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone the RAADS-R Self-Host repository to your local machine:
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    ```bash
+    git clone <repository-url>
+    cd raads-r-self-host
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    Install the required npm packages:
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+    ```bash
+    npm install
+    ```
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    This installs:
+    - React 19.2.0 and React DOM
+    - Vite 7.3.1 for development and building
+    - Tailwind CSS v4 for styling
+    - TypeScript for type safety
+    - Vitest for testing
+  </Step>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+  <Step title="Start the development server">
+    Launch the local development server:
+    
+    ```bash
+    npm run dev
+    ```
+    
+    The application will be available at `http://localhost:5173`
+  </Step>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+  <Step title="Open in your browser">
+    Navigate to `http://localhost:5173` in your web browser. You should see the RAADS-R landing page.
+  </Step>
+</Steps>
 
-### Step 3: Go live
+## Verify Installation
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+Once the development server is running, verify everything works:
 
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+1. **Landing page loads**: You should see the RAADS-R questionnaire introduction
+2. **Dark mode toggle**: Click the theme toggle to switch between light and dark modes
+3. **Start questionnaire**: Click to begin and verify the first question loads
+4. **Navigate questions**: Test the previous/next buttons
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+The development server supports hot module replacement (HMR), so changes to the source code will automatically reload in the browser.
 </Note>
+
+## Available Commands
+
+Once installed, you have access to these npm scripts:
+
+<CodeGroup>
+```bash Development Server
+npm run dev
+# Starts Vite dev server on localhost:5173
+# Hot module replacement enabled
+```
+
+```bash Production Build
+npm run build
+# Compiles TypeScript and builds for production
+# Output directory: dist/
+```
+
+```bash Preview Build
+npm run preview
+# Preview the production build locally
+# Serves the dist/ folder
+```
+
+```bash Run Tests
+npm run test
+# Runs all 62 tests with Vitest
+# Validates scoring accuracy
+```
+
+```bash Watch Mode Tests
+npm run test:watch
+# Runs tests in watch mode
+# Re-runs on file changes
+```
+
+```bash Lint Code
+npm run lint
+# Runs ESLint on the codebase
+# Checks for code quality issues
+```
+</CodeGroup>
+
+## Build for Production
+
+When you're ready to deploy, create a production build:
+
+<Steps>
+  <Step title="Build the application">
+    ```bash
+    npm run build
+    ```
+    
+    This compiles TypeScript and creates optimized production files in the `dist/` directory.
+  </Step>
+
+  <Step title="Preview locally (optional)">
+    ```bash
+    npm run preview
+    ```
+    
+    Test the production build on your local machine before deploying.
+  </Step>
+
+  <Step title="Deploy the dist/ folder">
+    Deploy the contents of the `dist/` folder to your hosting provider of choice.
+    
+    See the [Deployment Guide](/deployment) for detailed deployment options.
+  </Step>
+</Steps>
+
+## Testing the Application
+
+The project includes comprehensive tests to ensure scoring accuracy:
+
+```bash
+npm run test
+```
+
+The test suite includes:
+
+- **62 total tests** validating all scoring logic
+- **Golden test vectors** for uniform response patterns (189, 51, 143, 97)
+- **Cross-validation** between two independent scoring engines
+- **Dataset structural tests** confirming all 80 items are accounted for
+- **No overlap validation** across the four clinical domains
+
+<Tip>
+Run tests before deploying to ensure the scoring implementation is correct.
+</Tip>
+
+## Troubleshooting
+
+### Port 5173 already in use
+
+If you see an error that port 5173 is already in use:
+
+```bash
+# Kill the process using port 5173
+lsof -ti:5173 | xargs kill -9
+
+# Or specify a different port
+npm run dev -- --port 3000
+```
+
+### Build fails with TypeScript errors
+
+Ensure you're using the correct Node.js version:
+
+```bash
+node --version  # Should be 18+
+```
+
+Clear node_modules and reinstall:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### Module not found errors
+
+If you see module resolution errors, try:
+
+```bash
+npm install
+npm run build
+```
+
+## Project Structure
+
+Understanding the project layout:
+
+```
+raads-r-self-host/
+├── src/
+│   ├── components/     # React components (Landing, Quiz, Results, etc.)
+│   ├── data/          # dataset.json with all 80 RAADS-R items
+│   ├── engine/        # Scoring logic and validation
+│   ├── hooks/         # Custom React hooks (useQuizState, useDarkMode)
+│   ├── utils/         # Export utilities (JSON, CSV, PDF)
+│   ├── App.tsx        # Main application component
+│   └── main.tsx       # Application entry point
+├── public/            # Static assets
+├── dist/              # Production build output (generated)
+├── package.json       # Dependencies and scripts
+├── vite.config.ts     # Vite configuration
+└── tsconfig.json      # TypeScript configuration
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Deployment Options" icon="server" href="/deployment">
+    Learn about deploying to Netlify, Vercel, GitHub Pages, and more.
+  </Card>
+  
+  <Card title="Customization" icon="gear" href="/development/customization">
+    Customize the questionnaire and UI to fit your needs.
+  </Card>
+</CardGroup>

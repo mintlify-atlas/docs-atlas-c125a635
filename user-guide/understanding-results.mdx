@@ -1,0 +1,229 @@
+---
+title: Understanding Results
+description: How to interpret RAADS-R scores, thresholds, and domain breakdowns
+---
+
+After completing all 80 questions, you'll receive a comprehensive results page showing your total score and subscale breakdowns. This guide explains how to interpret these results.
+
+## Results Page Overview
+
+The results page displays several sections with staggered animations:
+
+<Steps>
+  <Step title="Total Score Card">
+    Shows your overall score out of a maximum of 240 points, with threshold indicator
+  </Step>
+  
+  <Step title="Interpretation Section">
+    Provides context about what the scores mean and clinical significance
+  </Step>
+  
+  <Step title="Subscale Scores">
+    Breaks down your score across the four assessment domains
+  </Step>
+  
+  <Step title="How Scoring Works">
+    Explains the scoring methodology (expandable accordion)
+  </Step>
+  
+  <Step title="Action Buttons">
+    Export, print, delete, and retake options
+  </Step>
+</Steps>
+
+## Total Score
+
+Your total score is the sum of all four subscale scores:
+
+- **Maximum possible**: 240 points
+- **Clinical threshold**: 65 points
+- **Your score**: Displayed as a large number (e.g., "127/240")
+
+### Score Visualization
+
+The total score card includes:
+- A horizontal progress bar showing your score relative to the maximum
+- A vertical line marking the threshold of 65
+- A status badge indicating "Above threshold" or "Below threshold"
+
+<Info>
+  The threshold line appears at 27% of the bar (65/240). Scores above this line are considered clinically significant.
+</Info>
+
+Implementation in `Results.tsx:24-86`
+
+## Clinical Significance
+
+From the interpretation section in `Results.tsx:96-112`:
+
+<Note>
+  A total score of **65 or above** suggests the presence of clinically significant autistic traits. However, this result alone is not sufficient for a diagnosis.
+</Note>
+
+### What "Above Threshold" Means
+
+- The RAADS-R is a **screening tool**, not a diagnostic instrument
+- Scores above 65 indicate traits consistent with autism spectrum
+- Further assessment by a qualified healthcare professional is recommended
+- Results should be discussed in the context of your full clinical history
+
+### What "Below Threshold" Means
+
+- Scores below 65 suggest fewer clinically significant autistic traits
+- This doesn't rule out autism, especially if subscale scores vary significantly
+- Some individuals may have profiles that don't fit typical patterns
+- Consider individual subscale results, not just the total
+
+## Subscale Scores
+
+The RAADS-R assesses four domains, each with its own scoring range and threshold:
+
+### 1. Social Relatedness
+
+- **Questions**: 39 items
+- **Maximum score**: 117 points
+- **Threshold**: 30 points
+- **Assesses**: Social interactions, empathy, understanding others, social awareness
+
+Example items:
+- "I am often surprised when others tell me I have been rude"
+- "I can 'put myself in other people's shoes'"
+- "I often don't know how to act in social situations"
+
+### 2. Circumscribed Interests
+
+- **Questions**: 14 items
+- **Maximum score**: 42 points
+- **Threshold**: 14 points
+- **Assesses**: Special interests, routines, focus patterns, resistance to change
+
+This subscale measures the intensity and nature of focused interests characteristic of autism.
+
+### 3. Language
+
+- **Questions**: 7 items
+- **Maximum score**: 21 points
+- **Threshold**: 3 points
+- **Assesses**: Literal interpretation, understanding phrases, communication patterns
+
+Example item:
+- "I have a hard time figuring out what some phrases mean, like 'you are the apple of my eye'"
+
+<Warning>
+  The Language subscale has the lowest threshold (3 points) relative to its maximum. Even small scores can be significant.
+</Warning>
+
+### 4. Sensory Motor
+
+- **Questions**: 20 items
+- **Maximum score**: 60 points
+- **Threshold**: 15 points
+- **Assesses**: Sensory sensitivities, motor patterns, awareness of volume/tone
+
+Example item:
+- "Sometimes I talk too loudly or too softly, and I am not aware of it"
+
+## Domain Score Visualization
+
+Each subscale displays:
+
+- **Domain name** (e.g., "Social Relatedness")
+- **Your score** and **maximum** (e.g., "45/117")
+- **Progress bar** with threshold marker
+- **Status badge**: "Above" or "Below" threshold
+- **Color coding**: Orange badge for above threshold, gray for below
+
+From `DomainBar.tsx` and `Results.tsx:123-134`
+
+## How Scoring Works
+
+The scoring methodology is explained in the expandable "How Scoring Works" section:
+
+### Response Values
+
+Each question response has a point value:
+
+| Response Option | Symptom Items | Normative Items |
+|-----------------|---------------|------------------|
+| True now and when I was young | 3 points | 0 points |
+| True only now | 2 points | 1 point |
+| True only when younger than 16 | 1 point | 2 points |
+| Never true | 0 points | 3 points |
+
+### Normative vs. Symptom Items
+
+<Accordion title="Symptom Items (Most Questions)">
+  These describe experiences associated with autism. Agreement earns more points.
+  
+  Example: "I often don't know how to act in social situations"
+  - Responding "True now and when I was young" = 3 points
+</Accordion>
+
+<Accordion title="Normative Items (Reverse Scored)">
+  These describe neurotypical traits. Agreement earns fewer points.
+  
+  Example: "I am a sympathetic person"
+  - Responding "True now and when I was young" = 0 points
+  - Responding "Never true" = 3 points (reverse scoring)
+</Accordion>
+
+Scoring logic in `scoring.ts:11-13`:
+```typescript
+export function scoreItem(responseIndex: number, isNormative: boolean): number {
+  return isNormative ? responseIndex : 3 - responseIndex;
+}
+```
+
+## Interpreting Your Profile
+
+### Balanced Profile
+
+If all subscales are similarly above or below thresholds:
+- Indicates consistent trait patterns across domains
+- More straightforward interpretation
+
+### Uneven Profile
+
+If some subscales are high and others low:
+- May indicate strengths in some areas and challenges in others
+- Particularly relevant for diagnosis and support planning
+- Discuss with a professional for personalized interpretation
+
+<Note>
+  Individual subscale scores above their respective thresholds indicate more prominent patterns in that area, even if total score is below 65.
+</Note>
+
+## Next Steps Based on Results
+
+<Steps>
+  <Step title="Review All Subscales">
+    Don't focus only on the total score. Look at individual domain patterns.
+  </Step>
+  
+  <Step title="Export Your Results">
+    Save a copy in JSON, CSV, or PDF format for your records or to share with healthcare providers.
+  </Step>
+  
+  <Step title="Consult a Professional">
+    If scores are of concern or you have questions, seek evaluation from a qualified healthcare professional who can provide comprehensive assessment.
+  </Step>
+</Steps>
+
+## Important Disclaimers
+
+<Warning>
+  **This questionnaire is not a diagnostic tool.** Results should be discussed with a qualified healthcare professional who can provide a comprehensive assessment.
+</Warning>
+
+- The RAADS-R is a self-report screening questionnaire
+- Clinical diagnosis requires professional evaluation
+- Many factors contribute to autism assessment
+- This tool measures traits, not impairment or support needs
+
+## Reference
+
+The RAADS-R is based on:
+
+Ritvo, R.A., Ritvo, E.R., Guthrie, D. et al. (2011). The Ritvo Autism Asperger Diagnostic Scale-Revised (RAADS-R). *Journal of Autism and Developmental Disorders*, 41(8), 1076–1085.
+
+Published under [CC BY-NC](https://pmc.ncbi.nlm.nih.gov/articles/PMC3134766/)

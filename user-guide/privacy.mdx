@@ -1,0 +1,463 @@
+---
+title: Privacy & Data Handling
+description: How your data is stored, processed, and protected in the RAADS-R application
+---
+
+Privacy and data security are fundamental to the RAADS-R self-host application. This page explains how your questionnaire responses are handled, stored, and protected.
+
+## Core Privacy Principles
+
+<Info>
+  **Zero Server Storage**: Your questionnaire responses never leave your device. All data storage and processing happens locally in your browser.
+</Info>
+
+The application is built with privacy-first architecture:
+
+- No backend server receives your responses
+- No cloud storage or databases
+- No third-party analytics tracking individual responses
+- All scoring calculations performed client-side
+- Optional local storage for resume functionality
+
+## Data Storage Options
+
+When you start the questionnaire, you'll see a privacy banner with two choices:
+
+### Option 1: Save Progress
+
+Enables browser localStorage to save responses as you go:
+
+**What is stored:**
+- Your responses to each question (numeric values 0-3)
+- Privacy consent status
+- Current question index (for resume functionality)
+
+**Where it's stored:**
+- Browser localStorage on your device only
+- Specific to the domain/URL of the application
+- Not accessible to other websites
+
+**How long it persists:**
+- Until you click "Delete My Data"
+- Until you clear browser data/cache manually
+- Until localStorage is cleared by browser maintenance
+
+**Benefits:**
+- Resume questionnaire if interrupted
+- Close browser and return later
+- Navigate away and come back
+- Protection against accidental page refresh
+
+Implementation in `useLocalStorage.ts` and `PrivacyBanner.tsx`
+
+### Option 2: No Thanks
+
+Proceed without saving progress:
+
+**How it works:**
+- Responses stored only in browser memory (RAM)
+- Data lost when page is closed or refreshed
+- Must complete questionnaire in one session
+
+**When to choose this:**
+- Using a shared or public computer
+- Don't want any local data persistence
+- Can complete in one sitting (typically 15-25 minutes)
+- Maximum privacy preference
+
+**Trade-offs:**
+- Cannot resume if interrupted
+- Must retake from start if browser crashes
+- More vulnerable to accidental data loss
+
+## Privacy Banner Details
+
+The banner appears the first time you begin the questionnaire:
+
+<Note>
+  "This questionnaire stores your responses locally in your browser so you can resume if interrupted. No data is transmitted externally. Cloudflare Pages provides basic page view analytics only (no personal data)."
+</Note>
+
+From `PrivacyBanner.tsx:10-14`
+
+### Banner Behavior
+
+- Appears at bottom of screen with semi-transparent backdrop
+- Blocks access to questionnaire until choice is made
+- Choice is saved (if "Save Progress" selected) or discarded
+- Does not reappear once dismissed
+
+## What Data is Collected
+
+The application only collects data necessary for questionnaire functionality:
+
+### Response Data
+
+```typescript
+type Response = 0 | 1 | 2 | 3;  // Numeric index only
+type Responses = Record<number, Response>;  // Question ID -> Response index
+```
+
+Stored format:
+```json
+{
+  "1": 0,  // Question 1: "True now and when I was young"
+  "2": 3,  // Question 2: "Never true"
+  "3": 1,  // Question 3: "True only now"
+  // ... up to 80 question IDs
+}
+```
+
+**What is NOT stored:**
+- Your name or personal identifiers
+- IP address (not accessible to client-side code)
+- Device information beyond standard browser metadata
+- Timestamps (except in exports, generated on-demand)
+- User account information (no accounts exist)
+
+### Privacy Consent
+
+If you accept "Save Progress":
+```json
+{
+  "privacyConsent": true
+}
+```
+
+A simple boolean flag indicating localStorage permission granted.
+
+## Data Processing
+
+All questionnaire processing happens in your browser:
+
+### Scoring Calculation
+
+From `scoring.ts:11-49`:
+
+```typescript
+export function scoreItem(responseIndex: number, isNormative: boolean): number {
+  return isNormative ? responseIndex : 3 - responseIndex;
+}
+
+export function computeResults(responses: Responses, dataset: Dataset): Results {
+  // Calculation runs entirely client-side
+  // No server requests made
+}
+```
+
+**Process:**
+1. You select responses in the browser UI
+2. JavaScript stores responses in memory/localStorage
+3. When viewing results, scoring runs in your browser
+4. Calculations use the `scoring.ts` module locally
+5. Results displayed without any network activity
+
+### Export Processing
+
+From `export.ts:46-178`:
+
+All three export formats (JSON, CSV, PDF) are generated client-side:
+
+1. Response data read from browser memory
+2. Export functions process data into target format
+3. Blob created in browser memory
+4. Download triggered using browser File API
+5. No data transmitted over network
+
+<Info>
+  You can verify no network requests occur by opening browser DevTools (F12) and checking the Network tab during export.
+</Info>
+
+## Deleting Your Data
+
+You have complete control over your stored data:
+
+### Delete My Data Button
+
+On the results page, click "Delete My Data" to:
+
+1. See confirmation prompt: "Are you sure? This will remove all saved data."
+2. Click "Confirm" to delete or "Cancel" to abort
+3. All localStorage data is immediately cleared
+4. You're returned to the landing page
+5. No recovery is possible after deletion
+
+Implementation in `DeleteData.tsx`
+
+### Manual Deletion
+
+You can also clear data through browser settings:
+
+<Steps>
+  <Step title="Chrome/Edge">
+    Settings → Privacy and security → Clear browsing data → Cookies and site data
+  </Step>
+  
+  <Step title="Firefox">
+    Settings → Privacy & Security → Cookies and Site Data → Clear Data
+  </Step>
+  
+  <Step title="Safari">
+    Preferences → Privacy → Manage Website Data → Remove for this site
+  </Step>
+</Steps>
+
+### What Gets Deleted
+
+<Accordion title="Deleted">
+  - All 80 question responses
+  - Privacy consent flag
+  - Current question index
+  - Any other localStorage keys used by the app
+</Accordion>
+
+<Accordion title="NOT Deleted">
+  - Exported files (saved to your device)
+  - Browser history of visiting the site
+  - Cloudflare analytics (see below)
+</Accordion>
+
+## Third-Party Services
+
+The application minimizes third-party dependencies:
+
+### Cloudflare Pages Analytics
+
+If hosted on Cloudflare Pages:
+
+**What is collected:**
+- Page view counts (aggregate)
+- Referrer information (where visitors come from)
+- Geographic region (country-level)
+- Browser and device type (user-agent)
+
+**What is NOT collected:**
+- Individual questionnaire responses
+- Personal identifiers
+- Tracking across sites
+- Detailed user behavior
+
+**Purpose:**
+- Understand site usage patterns
+- Monitor performance and errors
+- Aggregate statistics only
+
+**Privacy-respecting:**
+- Complies with privacy regulations
+- No cookies used for analytics
+- No persistent user tracking
+- Data controlled by site operator
+
+From `PrivacyBanner.tsx:12-13`: "Cloudflare Pages provides basic page view analytics only (no personal data)."
+
+### No Other Third Parties
+
+The application does NOT use:
+
+- Google Analytics or similar detailed tracking
+- Social media pixels
+- Advertising networks
+- Third-party authentication services
+- External API calls for functionality
+- CDNs for user data (code assets only)
+
+## Self-Hosting Privacy Benefits
+
+When you self-host this application:
+
+<Info>
+  You have complete control over the deployment environment and can verify exactly what code is running.
+</Info>
+
+**Advantages:**
+- Host on your own infrastructure
+- No dependence on third-party services
+- Audit source code before deployment
+- Control over analytics (enable/disable)
+- Compliance with organizational policies
+- Air-gapped deployment possible
+
+**Self-Hosting Options:**
+- Internal corporate network
+- Personal server or VPS
+- Localhost (single-user)
+- Isolated network segment
+- Offline deployment (no internet required)
+
+See the [Deployment Guide](/deployment) for self-hosting instructions.
+
+## Compliance Considerations
+
+The privacy-first architecture supports various compliance requirements:
+
+### GDPR (General Data Protection Regulation)
+
+- **Minimal data collection**: Only essential questionnaire responses
+- **Purpose limitation**: Data used only for scoring
+- **Storage limitation**: User controls retention via "Delete My Data"
+- **Right to erasure**: Immediate deletion capability
+- **Data portability**: Export in standard formats (JSON, CSV)
+- **No cross-border transfer**: Data stays on user's device
+
+### HIPAA (Health Insurance Portability and Accountability Act)
+
+<Warning>
+  While the application has privacy-preserving architecture, HIPAA compliance depends on your deployment environment, usage context, and organizational policies. Consult legal counsel for healthcare applications.
+</Warning>
+
+**Privacy-supporting features:**
+- No PHI (Protected Health Information) transmitted
+- Local-only data storage
+- No business associate agreements required (no third parties)
+- Audit capability through open source code
+
+**Considerations for HIPAA use:**
+- Deploy on HIPAA-compliant infrastructure
+- Implement appropriate access controls
+- Maintain audit logs at hosting level
+- Consider additional encryption at rest
+- Document policies and procedures
+
+### Other Regulations
+
+The architecture supports:
+
+- **CCPA** (California Consumer Privacy Act)
+- **PIPEDA** (Canada)
+- **DPA** (UK Data Protection Act)
+- **Various healthcare privacy laws worldwide**
+
+## Security Measures
+
+### Client-Side Security
+
+<Accordion title="Same-Origin Policy">
+  Browser localStorage is isolated per domain. Other websites cannot access your questionnaire data.
+</Accordion>
+
+<Accordion title="No Server Exposure">
+  Since data never leaves your device, there's no risk of server breaches, man-in-the-middle attacks on data transmission, or unauthorized access to centralized databases.
+</Accordion>
+
+<Accordion title="Open Source Transparency">
+  All code is publicly available for security audit. No hidden data collection or obfuscated tracking.
+</Accordion>
+
+### Deployment Security
+
+For self-hosted deployments:
+
+- Serve over HTTPS to prevent tampering
+- Implement Content Security Policy (CSP) headers
+- Use Subresource Integrity (SRI) for dependencies
+- Regular security updates for hosting platform
+- Access controls at hosting level if needed
+
+### Browser Security
+
+Your browser provides the security foundation:
+
+- Keep browser updated to latest version
+- Use reputable browsers with active security support
+- Enable security features (e.g., Enhanced Safe Browsing)
+- Be cautious of browser extensions that access all sites
+- Use private/incognito mode on shared devices
+
+## Best Practices for Users
+
+<Steps>
+  <Step title="Use a Trusted Device">
+    Complete the questionnaire on a device you control, especially if storing responses.
+  </Step>
+  
+  <Step title="Verify the URL">
+    Ensure you're on the correct domain. Bookmark the legitimate site to avoid phishing.
+  </Step>
+  
+  <Step title="Choose Storage Wisely">
+    Select "No Thanks" on shared/public computers. Use "Save Progress" only on private devices.
+  </Step>
+  
+  <Step title="Export and Delete">
+    After completion, export results then click "Delete My Data" if no longer needed.
+  </Step>
+  
+  <Step title="Secure Exports">
+    Store exported files securely. Use encryption if emailing to healthcare providers.
+  </Step>
+</Steps>
+
+## Privacy on Shared Computers
+
+Special considerations for public or shared devices:
+
+<Warning>
+  Do NOT select "Save Progress" on computers used by others. Choose "No Thanks" or use private browsing mode.
+</Warning>
+
+**Safe usage:**
+1. Use browser's private/incognito mode
+2. Select "No Thanks" to privacy prompt
+3. Complete questionnaire in one session
+4. Export results before closing browser
+5. Close private browsing window when done
+6. Do not leave browser unattended during questionnaire
+
+**After completion:**
+- Clear browser history (Ctrl+H → Clear browsing data)
+- Close all browser windows
+- Log out of browser profile if using one
+- Verify no files left in Downloads folder
+
+## Transparency & Trust
+
+The application builds trust through transparency:
+
+### Open Source Code
+
+- Full source code available on GitHub
+- All data handling logic is public and auditable
+- Community review and contributions welcome
+- No proprietary tracking or hidden features
+
+### Clear Communication
+
+- Privacy banner explains data handling upfront
+- Documentation clearly states what is/isn't collected
+- No hidden terms of service or privacy policy surprises
+- Honest about third-party analytics (Cloudflare Pages)
+
+### User Control
+
+- You choose whether to save progress
+- You can delete data at any time
+- Export capability ensures data portability
+- No account lock-in or platform dependence
+
+## Questions or Concerns
+
+If you have privacy questions:
+
+1. Review the [source code](https://github.com/YOUR-REPO) to verify data handling
+2. Check browser DevTools Network tab to confirm no data transmission
+3. Open an issue on GitHub for technical questions
+4. Consult your organization's privacy officer for compliance questions
+5. Consider self-hosting for maximum control
+
+## Privacy Summary
+
+<Info>
+  **Your questionnaire responses are private by design.** All storage is local, all processing is client-side, and you have complete control over your data.
+</Info>
+
+Key privacy features:
+- ✓ Local-only data storage
+- ✓ Client-side processing
+- ✓ No server transmission
+- ✓ User-controlled deletion
+- ✓ Export capability
+- ✓ Open source transparency
+- ✓ Optional localStorage (not required)
+- ✓ Self-hosting support
+- ✓ Minimal third-party services
+- ✓ Compliance-friendly architecture

@@ -1,0 +1,429 @@
+---
+title: 'Testing'
+description: 'Testing approach, test suite coverage, and validation strategy'
+---
+
+## Overview
+
+The RAADS-R Self-Host project implements comprehensive **unit testing** for the scoring engine and dataset validation. The test suite ensures clinical accuracy, data integrity, and cross-validation between dual scoring implementations.
+
+## Test Suite Structure
+
+```
+src/__tests__/
+├── scoring.test.ts      # Scoring engine tests (270 lines)
+└── dataset.test.ts      # Dataset validation tests (151 lines)
+```
+
+**Total Test Coverage:**
+- **2 test files**
+- **421 lines** of test code
+- **Scoring engine**: Dual implementation validation
+- **Dataset**: Structural integrity and clinical accuracy
+
+## Scoring Engine Tests
+
+### Test Categories
+
+<Tabs>
+  <Tab title="Item Scoring">
+    Tests for individual item scoring with both symptom and normative items.
+    
+    ```typescript scoring.test.ts:17
+    describe('scoreItem', () => {
+      describe('symptom items (isNormative = false)', () => {
+        it('index 0 ("True now and when I was young") scores 3', () => {
+          expect(scoreItem(0, false)).toBe(3);
+        });
+
+        it('index 1 ("True only now") scores 2', () => {
+          expect(scoreItem(1, false)).toBe(2);
+        });
+
+        it('index 2 ("True only when I was younger than 16") scores 1', () => {
+          expect(scoreItem(2, false)).toBe(1);
+        });
+
+        it('index 3 ("Never true") scores 0', () => {
+          expect(scoreItem(3, false)).toBe(0);
+        });
+      });
+
+      describe('normative items (isNormative = true)', () => {
+        it('index 0 ("True now and when I was young") scores 0', () => {
+          expect(scoreItem(0, true)).toBe(0);
+        });
+        // ... additional normative tests
+      });
+    });
+    ```
+  </Tab>
+  <Tab title="Dual Engine Validation">
+    Cross-validation between primary and alternative scoring engines.
+    
+    ```typescript scoring.test.ts:93
+    describe('scoreItem and scoreItemAlt agree', () => {
+      it('produces identical scores for all response/normative combinations', () => {
+        for (const isNormative of [true, false]) {
+          for (const index of [0, 1, 2, 3]) {
+            expect(scoreItem(index, isNormative)).toBe(scoreItemAlt(index, isNormative));
+          }
+        }
+      });
+    });
+    ```
+  </Tab>
+  <Tab title="Golden Vectors">
+    Tests with known-good outputs for uniform response patterns.
+    
+    ```typescript scoring.test.ts:103
+    describe('computeResults golden vectors', () => {
+      describe('all index 0 ("True now and when I was young")', () => {
+        const results = computeResults(uniformResponses(0), ds);
+
+        it('total = 189', () => {
+          expect(results.total).toBe(189);
+        });
+
+        it('social = 75', () => {
+          const social = results.domains.find((d) => d.key === 'social')!;
+          expect(social.score).toBe(75);
+        });
+
+        it('interests = 42', () => {
+          const interests = results.domains.find((d) => d.key === 'interests')!;
+          expect(interests.score).toBe(42);
+        });
+
+        it('language = 18', () => {
+          const language = results.domains.find((d) => d.key === 'language')!;
+          expect(language.score).toBe(18);
+        });
+
+        it('sensory = 54', () => {
+          const sensory = results.domains.find((d) => d.key === 'sensory')!;
+          expect(sensory.score).toBe(54);
+        });
+
+        it('is above total cutoff', () => {
+          expect(results.aboveTotalCutoff).toBe(true);
+        });
+      });
+      // ... additional golden vector tests
+    });
+    ```
+  </Tab>
+  <Tab title="Boundary Tests">
+    Critical tests for cutoff boundary behavior.
+    
+    ```typescript scoring.test.ts:211
+    describe('cutoff boundary tests', () => {
+      it('score equal to totalCutoff is NOT above cutoff (uses strict >)', () => {
+        // Build responses that produce exactly 65
+        const responses = uniformResponses(3);
+        const symptomItems = ds.items.filter((item) => !item.isNormative);
+        for (let i = 0; i < 7; i++) {
+          responses[symptomItems[i].id] = 1;
+        }
+        const results = computeResults(responses, ds);
+        expect(results.total).toBe(65);
+        expect(results.aboveTotalCutoff).toBe(false);
+      });
+
+      it('score one above totalCutoff IS above cutoff', () => {
+        const responses = uniformResponses(3);
+        const symptomItems = ds.items.filter((item) => !item.isNormative);
+        for (let i = 0; i < 7; i++) {
+          responses[symptomItems[i].id] = 1;
+        }
+        responses[symptomItems[7].id] = 2;
+        const results = computeResults(responses, ds);
+        expect(results.total).toBe(66);
+        expect(results.aboveTotalCutoff).toBe(true);
+      });
+    });
+    ```
+  </Tab>
+</Tabs>
+
+### Golden Vector Test Cases
+
+The test suite includes **four golden vector test cases** with pre-computed expected scores:
+
+<ResponseField name="All Index 0" type="golden vector">
+  All questions answered "True now and when I was young"
+  - **Total Score**: 189
+  - **Social**: 75, **Interests**: 42, **Language**: 18, **Sensory**: 54
+  - **Above Cutoff**: Yes
+</ResponseField>
+
+<ResponseField name="All Index 1" type="golden vector">
+  All questions answered "True only now"
+  - **Total Score**: 143
+</ResponseField>
+
+<ResponseField name="All Index 2" type="golden vector">
+  All questions answered "True only when I was younger than 16"
+  - **Total Score**: 97
+</ResponseField>
+
+<ResponseField name="All Index 3" type="golden vector">
+  All questions answered "Never true"
+  - **Total Score**: 51
+  - **Social**: 42, **Interests**: 0, **Language**: 3, **Sensory**: 6
+  - **Above Cutoff**: No
+</ResponseField>
+
+### Test Helper Functions
+
+```typescript scoring.test.ts:8
+/** Build a Responses object where every item gets the same response index. */
+function uniformResponses(index: 0 | 1 | 2 | 3): Responses {
+  const responses: Responses = {};
+  for (const item of ds.items) {
+    responses[item.id] = index;
+  }
+  return responses;
+}
+```
+
+## Dataset Validation Tests
+
+### Structural Validation
+
+```typescript dataset.test.ts:6
+describe('dataset structural validation', () => {
+  it('has exactly 80 items', () => {
+    expect(ds.items).toHaveLength(80);
+    expect(ds.meta.totalItems).toBe(80);
+  });
+
+  it('item IDs are 1-80 with no gaps or duplicates', () => {
+    const ids = ds.items.map((item) => item.id).sort((a, b) => a - b);
+    const expected = Array.from({ length: 80 }, (_, i) => i + 1);
+    expect(ids).toEqual(expected);
+  });
+
+  it('every item has required fields', () => {
+    for (const item of ds.items) {
+      expect(item).toHaveProperty('id');
+      expect(item).toHaveProperty('text');
+      expect(item).toHaveProperty('isNormative');
+      expect(item).toHaveProperty('domain');
+      expect(typeof item.id).toBe('number');
+      expect(typeof item.text).toBe('string');
+      expect(typeof item.isNormative).toBe('boolean');
+      expect(typeof item.domain).toBe('string');
+    }
+  });
+});
+```
+
+### Domain Integrity Tests
+
+<Note>
+  These tests ensure no item belongs to multiple domains and all domain references are valid.
+</Note>
+
+```typescript dataset.test.ts:68
+it('no item belongs to multiple domains', () => {
+  const allDomainItemIds = ds.meta.domains.flatMap((d) => d.itemIds);
+  const unique = new Set(allDomainItemIds);
+  expect(unique.size).toBe(allDomainItemIds.length);
+});
+
+it('all domain itemIds reference valid item IDs', () => {
+  const validIds = new Set(ds.items.map((item) => item.id));
+  for (const domain of ds.meta.domains) {
+    for (const itemId of domain.itemIds) {
+      expect(validIds.has(itemId)).toBe(true);
+    }
+  }
+});
+
+it('item domain field matches the domain it appears in', () => {
+  const itemDomainMap = new Map<number, string>();
+  for (const domain of ds.meta.domains) {
+    for (const itemId of domain.itemIds) {
+      itemDomainMap.set(itemId, domain.key);
+    }
+  }
+  for (const item of ds.items) {
+    expect(itemDomainMap.get(item.id)).toBe(item.domain);
+  }
+});
+```
+
+### Normative Items Validation
+
+```typescript dataset.test.ts:95
+describe('normative items', () => {
+  it('has exactly 17 normative items', () => {
+    const normative = ds.items.filter((item) => item.isNormative);
+    expect(normative).toHaveLength(17);
+  });
+
+  it('normative item IDs match expected set', () => {
+    const expected = [1, 6, 11, 18, 23, 26, 33, 37, 43, 47, 48, 53, 58, 62, 68, 72, 77];
+    const actual = ds.items
+      .filter((item) => item.isNormative)
+      .map((item) => item.id)
+      .sort((a, b) => a - b);
+    expect(actual).toEqual(expected);
+  });
+
+  it('normative items per domain: social=14, interests=0, language=1, sensory=2', () => {
+    const normativeByDomain: Record<string, number> = {};
+    for (const item of ds.items) {
+      if (item.isNormative) {
+        normativeByDomain[item.domain] = (normativeByDomain[item.domain] || 0) + 1;
+      }
+    }
+    expect(normativeByDomain['social']).toBe(14);
+    expect(normativeByDomain['interests'] ?? 0).toBe(0);
+    expect(normativeByDomain['language']).toBe(1);
+    expect(normativeByDomain['sensory']).toBe(2);
+  });
+});
+```
+
+### Clinical Accuracy Tests
+
+```typescript dataset.test.ts:124
+describe('max scores and cutoffs', () => {
+  it('social maxScore is 117', () => {
+    expect(ds.meta.domains.find((d) => d.key === 'social')!.maxScore).toBe(117);
+  });
+
+  it('interests maxScore is 42', () => {
+    expect(ds.meta.domains.find((d) => d.key === 'interests')!.maxScore).toBe(42);
+  });
+
+  it('language maxScore is 21', () => {
+    expect(ds.meta.domains.find((d) => d.key === 'language')!.maxScore).toBe(21);
+  });
+
+  it('sensory maxScore is 60', () => {
+    expect(ds.meta.domains.find((d) => d.key === 'sensory')!.maxScore).toBe(60);
+  });
+
+  it('total max score is 240', () => {
+    const totalMax = ds.meta.domains.reduce((sum, d) => sum + d.maxScore, 0);
+    expect(totalMax).toBe(240);
+  });
+
+  it('total cutoff is 65', () => {
+    expect(ds.meta.totalCutoff).toBe(65);
+  });
+});
+```
+
+## Cross-Validation Strategy
+
+<Warning>
+  The project implements **dual scoring engines** with identical mathematical output to ensure correctness through cross-validation.
+</Warning>
+
+```typescript scoring.test.ts:241
+describe('cross-validation: primary vs alt engine', () => {
+  it('all index 0 produces identical results', () => {
+    const responses = uniformResponses(0);
+    const primary = computeResults(responses, ds);
+    const alt = computeResultsAlt(responses, ds);
+    expect(primary).toEqual(alt);
+  });
+
+  it('all index 1 produces identical results', () => {
+    const responses = uniformResponses(1);
+    const primary = computeResults(responses, ds);
+    const alt = computeResultsAlt(responses, ds);
+    expect(primary).toEqual(alt);
+  });
+
+  it('all index 2 produces identical results', () => {
+    const responses = uniformResponses(2);
+    const primary = computeResults(responses, ds);
+    const alt = computeResultsAlt(responses, ds);
+    expect(primary).toEqual(alt);
+  });
+
+  it('all index 3 produces identical results', () => {
+    const responses = uniformResponses(3);
+    const primary = computeResults(responses, ds);
+    const alt = computeResultsAlt(responses, ds);
+    expect(primary).toEqual(alt);
+  });
+});
+```
+
+**Validation Approach:**
+1. Primary engine uses formula: `isNormative ? responseIndex : 3 - responseIndex`
+2. Alternative engine uses lookup tables: `SYMPTOM_SCORES[responseIndex]`
+3. Tests ensure both produce identical `Results` objects for all inputs
+
+## Test Execution
+
+The project uses a standard JavaScript testing framework (likely Jest or Vitest based on syntax).
+
+```bash
+# Run all tests
+npm test
+
+# Run with coverage
+npm run test:coverage
+
+# Run specific test file
+npm test scoring.test.ts
+```
+
+## Coverage Goals
+
+<Tabs>
+  <Tab title="Scoring Engine">
+    - ✅ All response × normative combinations (16 cases)
+    - ✅ Golden vectors for uniform responses (4 cases)
+    - ✅ Boundary conditions at cutoff thresholds
+    - ✅ Dual engine cross-validation (4 cases)
+    - ✅ Metadata passthrough (totalMax, cutoffs)
+  </Tab>
+  <Tab title="Dataset">
+    - ✅ Structural integrity (80 items, IDs 1-80)
+    - ✅ Field type validation
+    - ✅ Domain item counts (39+14+7+20 = 80)
+    - ✅ No cross-domain contamination
+    - ✅ Normative item distribution (17 total)
+    - ✅ Clinical parameters (max scores, cutoffs)
+  </Tab>
+  <Tab title="Not Covered">
+    - ❌ React component tests
+    - ❌ Hook behavior tests
+    - ❌ UI interaction tests
+    - ❌ localStorage persistence
+    - ❌ Dark mode functionality
+    - ❌ Export/print features
+  </Tab>
+</Tabs>
+
+<Note>
+  The test suite focuses exclusively on **clinical accuracy** of the scoring algorithm and **data integrity** of the RAADS-R dataset. UI components are not currently covered by automated tests.
+</Note>
+
+## Quality Assurance
+
+**Test-Driven Validation:**
+- Golden vectors ensure known-good outputs
+- Boundary tests prevent off-by-one errors
+- Dual engines provide mathematical proof of correctness
+- Dataset tests prevent data corruption
+
+**Clinical Safety:**
+- Cutoff logic validated with exact boundary conditions
+- Normative item reversal tested exhaustively
+- Domain score aggregation verified
+- Total score calculation cross-checked
+
+## Implementation Files
+
+- **Scoring Tests**: `src/__tests__/scoring.test.ts` (270 lines)
+- **Dataset Tests**: `src/__tests__/dataset.test.ts` (151 lines)
+- **Tested Code**: `src/engine/scoring.ts`, `src/engine/scoring-alt.ts`, `src/data/dataset.schema.ts`

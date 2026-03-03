@@ -1,0 +1,388 @@
+---
+title: Customization Guide
+description: How to customize the questionnaire, UI, and scoring logic for RAADS-R Self-Host
+---
+
+## Overview
+
+This guide covers common customization scenarios for adapting the RAADS-R questionnaire to your needs. All customizations should maintain the clinical accuracy of the instrument.
+
+<Warning>
+  The RAADS-R is a validated clinical instrument. Modifying the questions, scoring, or thresholds may invalidate the clinical utility of the results. Always consult the original research when making changes.
+</Warning>
+
+## Customizing the Questionnaire
+
+### Modifying Questions
+
+All 80 questions are stored in `src/data/dataset.json`:
+
+<Steps>
+  <Step title="Open the Dataset File">
+    Navigate to `src/data/dataset.json` and locate the item you want to modify:
+    
+    ```json
+    {
+      "id": 1,
+      "text": "I am a sympathetic person.",
+      "isNormative": true,
+      "domain": "social"
+    }
+    ```
+  </Step>
+
+  <Step title="Edit the Question Text">
+    Modify the `text` field while preserving the structure:
+    
+    ```json
+    {
+      "id": 1,
+      "text": "Your custom question text here.",
+      "isNormative": true,
+      "domain": "social"
+    }
+    ```
+  </Step>
+
+  <Step title="Validate the Schema">
+    Run tests to ensure the dataset is still valid:
+    
+    ```bash
+    npm run test
+    ```
+  </Step>
+</Steps>
+
+### Item Properties
+
+- **`id`** (number) - Unique identifier (1-80), must match the original RAADS-R numbering
+- **`text`** (string) - Question text displayed to users
+- **`isNormative`** (boolean) - `true` for reverse-scored items, `false` for normal scoring
+- **`domain`** (string) - One of: `"social"`, `"circumscribed"`, `"language"`, `"sensory"`
+
+<Tip>
+  There are 17 normative items that use reverse scoring. Changing `isNormative` will affect how responses are scored.
+</Tip>
+
+### Adding or Removing Questions
+
+To modify the total number of questions:
+
+1. **Edit** `src/data/dataset.json` to add/remove items
+2. **Update** the `meta.totalItems` count
+3. **Adjust** domain `itemIds` arrays to include new item IDs
+4. **Recalculate** `maxScore` for each affected domain
+5. **Run tests** to validate integrity: `npm run test`
+
+<Warning>
+  Changing the number of items will break validation tests. You'll need to update golden test vectors in `src/__tests__/scoring.test.ts`.
+</Warning>
+
+### Changing Response Options
+
+Response options are defined in `meta.responseOptions`:
+
+```json
+"responseOptions": [
+  "True now and when I was young",
+  "True only now",
+  "True only when I was younger than 16",
+  "Never true"
+]
+```
+
+To customize:
+
+1. Edit the array in `src/data/dataset.json`
+2. Ensure you maintain 4 options (scored 0-3)
+3. Update any hardcoded references in components
+
+## Customizing the UI
+
+### Styling with Tailwind
+
+The project uses **Tailwind CSS v4** with CSS variables for theming.
+
+#### Color Scheme
+
+Colors are defined in `src/index.css`:
+
+```css
+@theme {
+  --color-clinical-blue: #2563eb;
+  --color-clinical-blue-dark: #1e3a8a;
+  --color-surface-light: #f8fafc;
+  --color-surface-dark: #0f172a;
+  /* ... more colors */
+}
+```
+
+<Steps>
+  <Step title="Define Custom Colors">
+    Add new color variables in `src/index.css`:
+    
+    ```css
+    @theme {
+      --color-custom-primary: #10b981;
+      --color-custom-secondary: #3b82f6;
+    }
+    ```
+  </Step>
+
+  <Step title="Use in Components">
+    Reference your colors in className:
+    
+    ```tsx
+    <div className="bg-custom-primary text-custom-secondary">
+      Your content
+    </div>
+    ```
+  </Step>
+</Steps>
+
+#### Dark Mode
+
+Dark mode uses Tailwind's `dark:` variant:
+
+```tsx
+<div className="bg-white dark:bg-gray-900 text-black dark:text-white">
+  Adapts to dark mode
+</div>
+```
+
+The `useDarkMode` hook manages dark mode state and system preferences.
+
+### Customizing Components
+
+#### Landing Page
+
+Edit `src/components/Landing.tsx` to change the welcome screen:
+
+```tsx
+// src/components/Landing.tsx:20
+<h1 className="text-4xl font-bold text-clinical-blue dark:text-clinical-blue-light mb-4">
+  Your Custom Title
+</h1>
+```
+
+#### Question Display
+
+Modify `src/components/QuestionCard.tsx` to change how questions appear:
+
+```tsx
+// src/components/QuestionCard.tsx
+export default function QuestionCard({ item, response, onAnswer }: Props) {
+  // Customize the card layout, button styles, etc.
+}
+```
+
+#### Results Screen
+
+Customize `src/components/Results.tsx` to change the results display:
+
+<CodeGroup>
+```tsx Add Custom Interpretation
+// src/components/Results.tsx
+function CustomInterpretation({ results }: { results: Results }) {
+  return (
+    <div className="p-4 bg-blue-50 dark:bg-blue-900 rounded">
+      <h3>Custom Interpretation</h3>
+      <p>Your custom clinical interpretation logic here</p>
+    </div>
+  )
+}
+```
+
+```tsx Modify Score Display
+// Change how scores are visualized
+<DomainBar
+  label={domain.label}
+  score={domain.score}
+  maxScore={domain.maxScore}
+  cutoff={domain.cutoff}
+  aboveCutoff={domain.aboveCutoff}
+/>
+```
+</CodeGroup>
+
+## Customizing Scoring Logic
+
+### Modifying Thresholds
+
+Clinical thresholds are defined in `src/data/dataset.json`:
+
+```json
+"domains": [
+  {
+    "key": "social",
+    "label": "Social Relatedness",
+    "itemIds": [1, 2, 3, ...],
+    "maxScore": 117,
+    "cutoff": 30
+  }
+]
+```
+
+To adjust cutoff thresholds:
+
+1. Modify the `cutoff` value for each domain
+2. Update `totalCutoff` for the overall threshold
+3. Document your changes with clinical justification
+
+<Warning>
+  Changing cutoffs alters the clinical interpretation. Only modify these values based on validated research or clinical guidance.
+</Warning>
+
+### Custom Scoring Algorithms
+
+The scoring engine is in `src/engine/scoring.ts`:
+
+```typescript
+export function calculateResults(
+  responses: Responses,
+  dataset: Dataset
+): Results {
+  // Your custom scoring logic
+}
+```
+
+<Steps>
+  <Step title="Create Custom Scorer">
+    Add a new file `src/engine/scoring-custom.ts`:
+    
+    ```typescript
+    import type { Responses, Results, Dataset } from '../data/dataset.schema'
+    
+    export function customScoring(
+      responses: Responses,
+      dataset: Dataset
+    ): Results {
+      // Implement your custom logic
+      return results
+    }
+    ```
+  </Step>
+
+  <Step title="Update Quiz Hook">
+    Import and use in `src/hooks/useQuizState.ts`:
+    
+    ```typescript
+    import { customScoring } from '../engine/scoring-custom'
+    
+    const results = customScoring(responses, dataset)
+    ```
+  </Step>
+
+  <Step title="Add Tests">
+    Create `src/__tests__/scoring-custom.test.ts` to validate your logic
+  </Step>
+</Steps>
+
+## Customizing Export Formats
+
+### Modifying JSON Export
+
+Edit `src/utils/export.ts` to customize JSON structure:
+
+```typescript
+export function exportToJSON(results: Results, responses: Responses) {
+  return {
+    customField: 'your value',
+    timestamp: new Date().toISOString(),
+    results,
+    responses,
+    // Add custom metadata
+  }
+}
+```
+
+### Adding New Export Formats
+
+<Steps>
+  <Step title="Create Export Function">
+    Add to `src/utils/export.ts`:
+    
+    ```typescript
+    export function exportToXML(results: Results): string {
+      // Convert results to XML format
+      return xmlString
+    }
+    ```
+  </Step>
+
+  <Step title="Add Export Button">
+    Update `src/components/ExportButtons.tsx`:
+    
+    ```tsx
+    <button onClick={() => exportToXML(results)}>
+      Export as XML
+    </button>
+    ```
+  </Step>
+</Steps>
+
+## Privacy & Consent Customization
+
+### Modifying Consent Banner
+
+Edit `src/components/PrivacyBanner.tsx` to customize the privacy notice:
+
+```tsx
+<div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 p-4">
+  <p>Your custom privacy message</p>
+  <button onClick={onAccept}>Accept</button>
+  <button onClick={onDecline}>Decline</button>
+</div>
+```
+
+### Disabling LocalStorage
+
+To remove localStorage persistence entirely:
+
+1. Remove `useLocalStorage` calls in `src/hooks/useQuizState.ts`
+2. Remove `<PrivacyBanner />` from `src/App.tsx`
+3. Remove the "Delete My Data" button from `src/components/Results.tsx`
+
+## Testing Customizations
+
+After making changes:
+
+<Steps>
+  <Step title="Run Tests">
+    ```bash
+    npm run test
+    ```
+  </Step>
+
+  <Step title="Test in Browser">
+    ```bash
+    npm run dev
+    ```
+    
+    Manually test:
+    - Complete the full questionnaire
+    - Check all response options work
+    - Verify scoring calculations
+    - Test dark mode toggle
+    - Test export functions
+  </Step>
+
+  <Step title="Build Production">
+    ```bash
+    npm run build
+    npm run preview
+    ```
+    
+    Test the production build before deployment
+  </Step>
+</Steps>
+
+<Note>
+  Always document your customizations in comments or a separate CUSTOMIZATIONS.md file for future reference.
+</Note>
+
+## Next Steps
+
+- Review [Project Structure](/development/project-structure) to understand where files are located
+- Read [Contributing Guidelines](/development/contributing) if you plan to share your changes
+- Check the [Local Setup](/development/setup) guide for development environment details
