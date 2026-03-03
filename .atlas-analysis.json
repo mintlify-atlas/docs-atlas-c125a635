@@ -1,0 +1,76 @@
+{
+  "projectType": "frontend",
+  "projectName": "RAADS-R Self-Host",
+  "projectDescription": "Self-hosted, offline-first RAADS-R autism screening questionnaire with 80 items, domain scoring, and export functionality.",
+  "theme": "almond",
+  "primaryColor": "#3b82f6",
+  "lightColor": "#60a5fa",
+  "darkColor": "#2563eb",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": [
+          "introduction",
+          "quickstart",
+          "deployment"
+        ]
+      },
+      {
+        "group": "Using the App",
+        "pages": [
+          "user-guide/taking-the-questionnaire",
+          "user-guide/understanding-results",
+          "user-guide/exporting-data",
+          "user-guide/privacy"
+        ]
+      },
+      {
+        "group": "Technical Details",
+        "pages": [
+          "technical/scoring-methodology",
+          "technical/data-structure",
+          "technical/architecture",
+          "technical/testing"
+        ]
+      },
+      {
+        "group": "Development",
+        "pages": [
+          "development/setup",
+          "development/project-structure",
+          "development/customization",
+          "development/contributing"
+        ]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "reference/clinical-background",
+          "reference/faq",
+          "reference/attribution"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "80-item RAADS-R questionnaire with exact clinical wording",
+    "Four domain scoring (Social Relatedness, Circumscribed Interests, Language, Sensory Motor)",
+    "Offline-first with optional localStorage persistence",
+    "Export results as JSON, CSV, or PDF",
+    "Dark/light mode with system preference detection",
+    "Print-friendly results view",
+    "Fully accessible with keyboard navigation",
+    "No tracking, no backend, no external requests"
+  ],
+  "publicApiSurface": [
+    "scoreItem(responseIndex, isNormative)",
+    "computeResults(responses, dataset)",
+    "exportJSON(responses, results, dataset)",
+    "exportCSV(responses, results, dataset)",
+    "exportPDF(responses, results, dataset)",
+    "useQuizState(dataset)",
+    "useDarkMode()",
+    "useLocalStorage(key, initialValue)"
+  ]
+}
